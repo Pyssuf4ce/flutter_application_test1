@@ -1,0 +1,341 @@
+import 'dart:typed_data'; 
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/services.dart'; 
+
+class EditItemPage extends StatefulWidget {
+  final Map<String, dynamic> item; 
+  const EditItemPage({super.key, required this.item});
+
+  @override
+  State<EditItemPage> createState() => _EditItemPageState();
+}
+
+class _EditItemPageState extends State<EditItemPage> {
+  late TextEditingController _nameController;
+  late TextEditingController _priceController;
+  late TextEditingController _descController;
+  
+  String _selectedCategory = 'แฟชั่น';
+  final List<String> _categories = [
+    'แฟชั่น', 
+    'ไอที/อุปกรณ์', 
+    'ความงาม', 
+    'งานบริการ', 
+    'อาหาร', 
+    'ของสะสม', 
+    'ทั่วไป'
+  ];
+
+  List<String> _initialImages = []; 
+  List<String> _existingImages = []; 
+  final List<XFile> _newPickedFiles = []; 
+  final List<Uint8List> _newImagesBytes = []; 
+  bool _isLoading = false; 
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.item['name']);
+    _priceController = TextEditingController(text: widget.item['price'].toString());
+    _descController = TextEditingController(text: widget.item['description'] ?? '');
+    
+    if (_categories.contains(widget.item['category'])) {
+      _selectedCategory = widget.item['category'];
+    }
+
+    if (widget.item['image_urls'] != null) {
+      _existingImages = List<String>.from(widget.item['image_urls']);
+    } else if (widget.item['image_url'] != null) {
+      _existingImages = [widget.item['image_url']];
+    }
+    
+    _initialImages = List<String>.from(_existingImages);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImages() async {
+    final picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage(imageQuality: 70);
+    
+    if (pickedFiles.isNotEmpty) {
+      List<Uint8List> bytesList = [];
+      for (var file in pickedFiles) {
+        bytesList.add(await file.readAsBytes());
+      }
+      setState(() {
+        _newPickedFiles.addAll(pickedFiles);
+        _newImagesBytes.addAll(bytesList);
+      });
+    }
+  }
+
+  // 💡 ฟังก์ชันลบรายการสินค้าแบบมืออาชีพ (RPC + DB First)
+  Future<void> _deleteListing() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text("ลบรายการนี้?", style: GoogleFonts.manrope(fontWeight: FontWeight.bold, color: Colors.red)),
+        content: Text("ยืนยันการลบสินค้า ข้อมูลจะหายไปถาวรนะคุณ Kong", style: GoogleFonts.manrope()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("ยกเลิก", style: GoogleFonts.manrope(color: Colors.grey))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            child: Text("ลบเลย", style: GoogleFonts.manrope(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        final supabase = Supabase.instance.client;
+
+        // 🚀 STEP 1: ลบข้อมูลจาก Database ผ่าน RPC (ต้องรัน SQL Function ใน Supabase ก่อนนะ!)
+        await supabase.rpc(
+          'delete_product_completely', 
+          params: {'p_id': widget.item['id']}
+        );
+
+        // 🚀 STEP 2: เมื่อลบใน DB สำเร็จค่อยตามไปลบรูปใน Storage (Fire and Forget)
+        _cleanupAllImages(_initialImages);
+
+        if (mounted) {
+          HapticFeedback.heavyImpact();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ลบรายการเรียบร้อยแล้ว'), behavior: SnackBarBehavior.floating)
+          );
+          
+          // ปิดทั้งหน้า Edit และหน้า Detail เพื่อกลับไปหน้า My Listings
+          Navigator.of(context)..pop()..pop(); 
+        }
+      } catch (e) {
+        _showSnackBar('เกิดข้อผิดพลาด: ${e.toString()}', Colors.red);
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  // ฟังก์ชันช่วยล้างรูปภาพทั้งหมดใน Storage
+  Future<void> _cleanupAllImages(List<String> urls) async {
+    if (urls.isEmpty) return;
+    try {
+      final supabase = Supabase.instance.client;
+      List<String> pathsToDelete = [];
+      for (var url in urls) {
+        final uri = Uri.parse(url);
+        final pathSegments = uri.pathSegments;
+        final bucketIndex = pathSegments.indexOf('product_images');
+        if (bucketIndex != -1) {
+          pathsToDelete.add(pathSegments.sublist(bucketIndex + 1).join('/'));
+        }
+      }
+      if (pathsToDelete.isNotEmpty) {
+        await supabase.storage.from('product_images').remove(pathsToDelete);
+      }
+    } catch (e) {
+      debugPrint("Cleanup warning: $e");
+    }
+  }
+
+  Future<void> _updateListing() async {
+    if (_nameController.text.isEmpty || _priceController.text.isEmpty) {
+      _showSnackBar('ใส่ชื่อและราคาก่อนนะคุณ Kong', Colors.orange);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) throw Exception('ไม่พบผู้ใช้');
+
+      // 1. ลบรูปที่ผู้ใช้กดกากบาททิ้งออกจาก Storage
+      final imagesToRemove = _initialImages.where((url) => !_existingImages.contains(url)).toList();
+      if (imagesToRemove.isNotEmpty) {
+        List<String> paths = [];
+        for (var url in imagesToRemove) {
+          final uri = Uri.parse(url);
+          final bucketIndex = uri.pathSegments.indexOf('product_images');
+          if (bucketIndex != -1) paths.add(uri.pathSegments.sublist(bucketIndex + 1).join('/'));
+        }
+        await supabase.storage.from('product_images').remove(paths);
+      }
+
+      // 2. อัปโหลดรูปใหม่พร้อมกัน (Parallel)
+      List<String> finalUrls = List.from(_existingImages);
+      if (_newPickedFiles.isNotEmpty) {
+        List<Future<String>> uploadTasks = [];
+        for (int i = 0; i < _newPickedFiles.length; i++) {
+          final name = '${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+          final path = '${user.id}/$name';
+          uploadTasks.add(() async {
+            await supabase.storage.from('product_images').uploadBinary(path, _newImagesBytes[i]);
+            return supabase.storage.from('product_images').getPublicUrl(path);
+          }());
+        }
+        final uploadedResults = await Future.wait(uploadTasks);
+        finalUrls.addAll(uploadedResults);
+      }
+
+      // 3. บันทึกข้อมูล
+      await supabase.from('products').update({
+        'name': _nameController.text.trim(),
+        'price': double.tryParse(_priceController.text.replaceAll(',', '')) ?? 0.0,
+        'description': _descController.text.trim(),
+        'category': _selectedCategory,
+        'image_url': finalUrls.isNotEmpty ? finalUrls.first : '',
+        'image_urls': finalUrls,
+      }).eq('id', widget.item['id']);
+
+      if (mounted) {
+        HapticFeedback.lightImpact();
+        _showSnackBar('อัปเดตข้อมูลสำเร็จ!', Colors.green);
+        Navigator.pop(context, true); 
+      }
+    } catch (e) {
+      _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnackBar(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, style: GoogleFonts.manrope(fontWeight: FontWeight.w600)), backgroundColor: color, behavior: SnackBarBehavior.floating));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white, elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.close, color: Color(0xFF191C1D)), onPressed: () => Navigator.pop(context)),
+        title: Text("แก้ไขข้อมูล", style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF191C1D))),
+        centerTitle: true,
+      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF35408B)))
+        : SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("อัปเดตสินค้า", style: GoogleFonts.manrope(fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D))),
+                const SizedBox(height: 32),
+                
+                Text("รูปภาพสินค้า", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _pickImages,
+                        child: Container(
+                          width: 100, height: 100,
+                          decoration: BoxDecoration(color: const Color(0xFFF5F7FA), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E9EC), width: 2)),
+                          child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF35408B)), SizedBox(height: 4), Text("เพิ่มรูป", style: TextStyle(color: Color(0xFF767682), fontSize: 12))]),
+                        ),
+                      ),
+                      ..._existingImages.asMap().entries.map((entry) => _buildThumbnail(isNetwork: true, url: entry.value, onRemove: () => setState(() => _existingImages.removeAt(entry.key)))),
+                      ..._newImagesBytes.asMap().entries.map((entry) => _buildThumbnail(isNetwork: false, bytes: entry.value, onRemove: () => setState(() { _newPickedFiles.removeAt(entry.key); _newImagesBytes.removeAt(entry.key); }))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                _buildInputField("ชื่อสินค้า", "ขายอะไรดีวันนี้?", _nameController, TextInputType.text),
+                const SizedBox(height: 24),
+                _buildInputField("ราคา (บาท)", "ตั้งราคาใหม่", _priceController, const TextInputType.numberWithOptions(decimal: true)),
+                const SizedBox(height: 24),
+                
+                Text("หมวดหมู่", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(color: const Color(0xFFF5F7FA), borderRadius: BorderRadius.circular(16)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedCategory, isExpanded: true,
+                      style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: const Color(0xFF191C1D), fontSize: 16),
+                      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: GoogleFonts.manrope()))).toList(),
+                      onChanged: (val) => setState(() => _selectedCategory = val!),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                _buildInputField("รายละเอียด", "อธิบายจุดเด่น...", _descController, TextInputType.multiline, maxLines: 5),
+                const SizedBox(height: 48),
+
+                SizedBox(
+                  width: double.infinity, height: 56,
+                  child: ElevatedButton(
+                    onPressed: _updateListing,
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF35408B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+                    child: Text("บันทึกการเปลี่ยนแปลง", style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity, height: 56,
+                  child: TextButton.icon(
+                    onPressed: _deleteListing,
+                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    label: Text("ลบรายการสินค้านี้", style: GoogleFonts.manrope(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                    style: TextButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.redAccent.withOpacity(0.2))),
+                      backgroundColor: Colors.redAccent.withOpacity(0.05),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _buildThumbnail({required bool isNetwork, String? url, Uint8List? bytes, required VoidCallback onRemove}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12),
+      child: Stack(
+        children: [
+          ClipRRect(borderRadius: BorderRadius.circular(16), child: isNetwork ? Image.network(url!, width: 100, height: 100, fit: BoxFit.cover) : Image.memory(bytes!, width: 100, height: 100, fit: BoxFit.cover)),
+          Positioned(top: 4, right: 4, child: GestureDetector(onTap: onRemove, child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField(String label, String hint, TextEditingController controller, TextInputType type, {int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        TextField(
+          controller: controller, keyboardType: type, maxLines: maxLines,
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+          decoration: InputDecoration(hintText: hint, filled: true, fillColor: const Color(0xFFF5F7FA), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18)),
+        ),
+      ],
+    );
+  }
+}
