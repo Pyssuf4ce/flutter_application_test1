@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart'; // เพิ่ม import นี้
 
 // 💡 Import ส่วนประกอบสำคัญ
 import 'page/login_page.dart';
@@ -12,7 +13,7 @@ import 'models/message_model.dart'; // 💡 ตรวจสอบว่ารั
 Future<void> main() async {
   // 1. เตรียมความพร้อมของ Flutter Engine
   WidgetsFlutterBinding.ensureInitialized();
-
+  await initializeDateFormatting('th', null); // ← เพิ่มบรรทัดนี้ก่อน runApp
   // 2. เริ่มการทำงานของ Hive (ระบบ Local Database สำหรับเล่น Offline)
   await Hive.initFlutter();
   

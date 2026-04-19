@@ -1,24 +1,52 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../models/message_model.dart'; 
-import 'chat_list_page.dart'; // 💡 Import เพื่อใช้ globalRefresh สะกิดหน้า Inbox
+import '../models/message_model.dart';
+import 'chat_events.dart';
 
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
+const _kPageSize = 30;
+const _kAccent = Color(0xFF35408B);
+const _kBg = Color(0xFFF8F9FA);
+
+// ─────────────────────────────────────────────
+// PEER MODEL
+// ─────────────────────────────────────────────
+class _Peer {
+  final String id;
+  final String name;
+  final String avatarUrl;
+  const _Peer({required this.id, required this.name, required this.avatarUrl});
+
+  _Peer copyWith({String? name, String? avatarUrl}) => _Peer(
+        id: id,
+        name: name ?? this.name,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+      );
+}
+
+// ─────────────────────────────────────────────
+// PAGE
+// ─────────────────────────────────────────────
 class ChatRoomPage extends StatefulWidget {
-  final Map<String, dynamic>? product; 
-  final String? roomId; 
-  final String? targetSellerId; 
-  final String? peerName;    
-  final String? peerAvatar;  
-  
+  final Map<String, dynamic>? product;
+  final String? roomId;
+  final String? targetSellerId;
+  final String? peerName;
+  final String? peerAvatar;
+
   const ChatRoomPage({
-    super.key, 
-    this.product, 
-    this.roomId, 
-    this.targetSellerId, 
-    this.peerName, 
-    this.peerAvatar
+    super.key,
+    this.product,
+    this.roomId,
+    this.targetSellerId,
+    this.peerName,
+    this.peerAvatar,
   });
 
   @override
@@ -26,348 +54,725 @@ class ChatRoomPage extends StatefulWidget {
 }
 
 class _ChatRoomPageState extends State<ChatRoomPage> {
-  final _messageController = TextEditingController();
+  // ── deps ──────────────────────────────────────
   final _supabase = Supabase.instance.client;
-  final Box<LocalMessage> _messageBox = Hive.box<LocalMessage>('messages');
-  
-  String? _roomId;
-  late String _otherUserName = widget.peerName ?? 'VAULT User'; 
-  late String _otherUserAvatar = widget.peerAvatar ?? '';         
-  bool _isLoadingRoom = true;
-  List<Map<String, dynamic>> _displayMessages = [];
-  late final String _myUserId;
+  late final Box<LocalMessage> _box;
+  late final String _myId;
 
+  // ── state ─────────────────────────────────────
+  String? _selectedMessageId; // id ของข้อความที่กดอยู่
+  String? _roomId;
+  _Peer _peer = const _Peer(id: '', name: 'VAULT User', avatarUrl: '');
+
+  bool _isInitializing = true;
+  String? _initError;
+
+  List<Map<String, dynamic>> _messages = [];
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  String? _oldestCursor; // id ของข้อความเก่าสุดที่โหลดมาแล้ว
+
+  // ── controllers ───────────────────────────────
+  final _textCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  StreamSubscription<List<Map<String, dynamic>>>? _msgSub;
+
+  // ─────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
-    _myUserId = _supabase.auth.currentUser!.id;
-    _initializeRoom();
+    _myId = _supabase.auth.currentUser!.id;
+    _box = Hive.box<LocalMessage>('messages');
+    _scrollCtrl.addListener(_onScroll);
+
+    // ตั้งค่า peer เบื้องต้นจาก widget params (แสดงได้ทันทีก่อนดึงจาก DB)
+    _peer = _Peer(
+      id: widget.targetSellerId ?? '',
+      name: widget.peerName ?? 'VAULT User',
+      avatarUrl: widget.peerAvatar ?? '',
+    );
+
+    _initRoom();
   }
 
   @override
   void dispose() {
-    _messageController.dispose();
+    _msgSub?.cancel();
+    _textCtrl.dispose();
+    _scrollCtrl
+      ..removeListener(_onScroll)
+      ..dispose();
     super.dispose();
   }
 
-  Future<void> _initializeRoom() async {
+  // ─────────────────────────────────────────────
+  // INIT
+  // ─────────────────────────────────────────────
+  Future<void> _initRoom() async {
     try {
-      String? roomId = widget.roomId;
-      final peerId = widget.product?['seller_id'] ?? widget.targetSellerId;
+      final roomId = await _resolveRoomId();
+      if (roomId == null) throw Exception('ไม่สามารถสร้างห้องแชทได้');
 
-      if (roomId == null) {
-        final existingRoom = await _supabase.from('chat_rooms')
-            .select()
-            .or('and(buyer_id.eq.$_myUserId,seller_id.eq.$peerId),and(buyer_id.eq.$peerId,seller_id.eq.$_myUserId)')
-            .maybeSingle();
-            
-        if (existingRoom != null) {
-          roomId = existingRoom['id'];
-        } else {
-          final newRoom = await _supabase.from('chat_rooms').insert({
-            'buyer_id': _myUserId, 
-            'seller_id': peerId
-          }).select().single();
-          roomId = newRoom['id'];
-        }
-      }
+      _roomId = roomId;
+      _loadCache(); // แสดง offline cache ก่อนเลย
 
-      if (roomId != null) {
-        _roomId = roomId;
-        _loadLocalMessages();
-        _setupMessageStream(roomId);
-        _fetchOtherUserProfileSilently(roomId);
-      }
+      await Future.wait([
+        _fetchRecent(roomId),
+        _fetchPeer(roomId),
+      ]);
+
+      _setupStream(roomId);
+      if (mounted) setState(() => _isInitializing = false);
     } catch (e) {
-      if (mounted) setState(() => _isLoadingRoom = false);
+      if (mounted) setState(() { _isInitializing = false; _initError = e.toString(); });
     }
   }
 
-  void _loadLocalMessages() {
-    final localMsgs = _messageBox.values
-        .where((msg) => msg.roomId == _roomId)
+  Future<String?> _resolveRoomId() async {
+    if (widget.roomId != null) return widget.roomId;
+
+    final peerId = widget.product?['seller_id'] ?? widget.targetSellerId;
+    if (peerId == null) return null;
+
+    final existing = await _supabase
+        .from('chat_rooms')
+        .select('id')
+        .or('and(buyer_id.eq.$_myId,seller_id.eq.$peerId),'
+            'and(buyer_id.eq.$peerId,seller_id.eq.$_myId)')
+        .maybeSingle();
+
+    if (existing != null) return existing['id'] as String;
+
+    final created = await _supabase
+        .from('chat_rooms')
+        .insert({'buyer_id': _myId, 'seller_id': peerId})
+        .select('id')
+        .single();
+
+    return created['id'] as String;
+  }
+
+  // ─────────────────────────────────────────────
+  // MESSAGES
+  // ─────────────────────────────────────────────
+  void _loadCache() {
+    if (_roomId == null) return;
+    final cached = _box.values
+        .where((m) => m.roomId == _roomId)
         .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
-    setState(() {
-      _displayMessages = localMsgs.map((m) => {
-        'id': m.id, 
-        'room_id': m.roomId, 
-        'sender_id': m.senderId, 
-        'content': m.content, 
-        'created_at': m.createdAt.toIso8601String(), 
-        'status': m.status
-      }).toList();
-      _isLoadingRoom = false;
-    });
-  }
 
-  Future<void> _fetchOtherUserProfileSilently(String rId) async {
-    final room = await _supabase.from('chat_rooms').select('buyer_id, seller_id').eq('id', rId).single();
-    final otherId = (room['buyer_id'] == _myUserId) ? room['seller_id'] : room['buyer_id'];
-    final profile = await _supabase.from('profiles').select('username, avatar_url').eq('id', otherId).single();
-    
-    if (mounted && (profile['username'] != _otherUserName || profile['avatar_url'] != _otherUserAvatar)) {
-      setState(() {
-        _otherUserName = profile['username'] ?? 'VAULT User';
-        _otherUserAvatar = profile['avatar_url'] ?? '';
-      });
+    if (mounted && cached.isNotEmpty) {
+      setState(() => _messages = cached.map(_toMap).toList());
     }
   }
 
-  void _setupMessageStream(String rId) {
-    _supabase.from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('room_id', rId)
+  Future<void> _fetchRecent(String roomId) async {
+    final data = await _supabase
+        .from('messages')
+        .select()
+        .eq('room_id', roomId)
         .order('created_at', ascending: false)
-        .listen((data) {
-          for (var msg in data) {
-            _messageBox.put(msg['id'], LocalMessage(
-              id: msg['id'], 
-              roomId: msg['room_id'], 
-              senderId: msg['sender_id'], 
-              content: msg['content'], 
-              createdAt: DateTime.parse(msg['created_at']), 
-              status: 'sent'
-            ));
-          }
-          if (mounted) _loadLocalMessages();
-        });
+        .limit(_kPageSize) as List<dynamic>;
+
+    _saveAndSync(data.cast<Map<String, dynamic>>());
+
+    _hasMore = data.length == _kPageSize;
+    if (_hasMore && data.isNotEmpty) _oldestCursor = data.last['id'] as String?;
   }
 
-  // 🚀 ฟังก์ชันส่งข้อความแบบลบตัวปลอมเพื่อแก้ข้อความเบิ้ล
-  Future<void> _sendMessage() async {
-    final text = _messageController.text.trim();
-    if (text.isEmpty || _roomId == null) return;
-
-    final tempId = 'temp-${DateTime.now().millisecondsSinceEpoch}';
-    final now = DateTime.now();
-    _messageController.clear();
-
-    // 1. Optimistic Update ลงจอและเครื่องทันที (สร้างตัวปลอม)
-    final newMessage = LocalMessage(
-      id: tempId, 
-      roomId: _roomId!, 
-      senderId: _myUserId, 
-      content: text, 
-      createdAt: now, 
-      status: 'sending'
-    );
-    await _messageBox.put(tempId, newMessage);
-    _loadLocalMessages(); 
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore || _roomId == null || _oldestCursor == null) return;
+    if (mounted) setState(() => _isLoadingMore = true);
 
     try {
-      // 2. ส่งขึ้นเซิร์ฟเวอร์ และดึง ID จริงกลับมา
-      final response = await _supabase.from('messages').insert({
-        'room_id': _roomId, 
-        'sender_id': _myUserId, 
-        'content': text
-      }).select().single();
-      
-      final realId = response['id'];
+      final data = await _supabase
+          .from('messages')
+          .select()
+          .eq('room_id', _roomId!)
+          .lt('id', _oldestCursor!) // cursor-based pagination
+          .order('created_at', ascending: false)
+          .limit(_kPageSize) as List<dynamic>;
 
-      // 3. 💡 ลบตัวปลอมทิ้งทันที เพื่อกันการโชว์เบิ้ล
-      await _messageBox.delete(tempId);
-
-      // 4. ใส่ของจริงที่มี ID ถูกต้องลงไปแทน
-      await _messageBox.put(realId, LocalMessage(
-        id: realId, 
-        roomId: _roomId!, 
-        senderId: _myUserId, 
-        content: text, 
-        createdAt: DateTime.parse(response['created_at']), 
-        status: 'sent'
-      ));
-
-      _loadLocalMessages();
-      
-      // อัปเดตห้องแชทล่าสุด
-      await _supabase.from('chat_rooms').update({
-        'last_message': text, 
-        'last_message_time': now.toIso8601String()
-      }).eq('id', _roomId!);
-      
-      // 🚀 5. สั่งสะกิดหน้า Inbox ให้อัปเดต
-      ChatListPage.globalRefresh.value++; 
-      
-    } catch (e) {
-      debugPrint("Offline mode: Stored locally as temp.");
+      final msgs = data.cast<Map<String, dynamic>>();
+      if (msgs.length < _kPageSize) _hasMore = false;
+      if (msgs.isNotEmpty) {
+        _oldestCursor = msgs.last['id'] as String?;
+        _saveAndSync(msgs);
+      }
+    } catch (_) {/* ผู้ใช้ pull-to-refresh ใหม่ได้ */}
+    finally {
+      if (mounted) setState(() => _isLoadingMore = false);
     }
   }
 
+  void _saveAndSync(List<Map<String, dynamic>> remoteList) {
+    for (final msg in remoteList) {
+      _box.put(msg['id'], LocalMessage(
+        id: msg['id'],
+        roomId: msg['room_id'],
+        senderId: msg['sender_id'],
+        content: msg['content'],
+        createdAt: DateTime.parse(msg['created_at']),
+        status: 'sent',
+      ));
+    }
+    _loadCache();
+  }
+
+  void _setupStream(String roomId) {
+    _msgSub = _supabase
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .eq('room_id', roomId)
+        .order('created_at', ascending: false)
+        .limit(_kPageSize) // ไม่ดึงทั้งหมด
+        .listen(
+          (data) => _saveAndSync(data),
+          onError: (_) {/* silent — local cache ยังแสดงได้ */},
+        );
+  }
+
+  void _onScroll() {
+    // reverse list → scroll ขึ้น = ใกล้ maxScrollExtent
+    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 300) {
+      _loadMore();
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // SEND
+  // ─────────────────────────────────────────────
+  Future<void> _sendMessage() async {
+    final text = _textCtrl.text.trim();
+    if (text.isEmpty || _roomId == null) return;
+
+    _textCtrl.clear();
+    HapticFeedback.lightImpact();
+
+    final tempId = 'temp-${DateTime.now().microsecondsSinceEpoch}';
+    final now = DateTime.now();
+
+    // 1. Optimistic update
+    await _box.put(tempId, LocalMessage(
+      id: tempId, roomId: _roomId!, senderId: _myId,
+      content: text, createdAt: now, status: 'sending',
+    ));
+    _loadCache();
+
+    try {
+      // 2. ส่งขึ้น Supabase
+      final res = await _supabase
+          .from('messages')
+          .insert({'room_id': _roomId!, 'sender_id': _myId, 'content': text})
+          .select()
+          .single();
+
+      // 3. swap temp → real
+      await _box.delete(tempId);
+      await _box.put(res['id'], LocalMessage(
+        id: res['id'], roomId: _roomId!, senderId: _myId,
+        content: text, createdAt: DateTime.parse(res['created_at']), status: 'sent',
+      ));
+      _loadCache();
+
+      // 4. อัปเดต last_message + แจ้ง inbox
+      unawaited(_supabase.from('chat_rooms').update({
+        'last_message': text,
+        'last_message_time': now.toIso8601String(),
+      }).eq('id', _roomId!));
+
+      ChatEvents.instance.notifyRoomUpdated(_roomId!);
+    } catch (_) {
+      if (mounted) {
+        _showSnack('ส่งไม่สำเร็จ — กรุณาลองใหม่');
+        // mark error
+        await _box.put(tempId, LocalMessage(
+          id: tempId, roomId: _roomId!, senderId: _myId,
+          content: text, createdAt: now, status: 'error',
+        ));
+        _loadCache();
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // PEER PROFILE
+  // ─────────────────────────────────────────────
+  Future<void> _fetchPeer(String roomId) async {
+    try {
+      final room = await _supabase
+          .from('chat_rooms')
+          .select('buyer_id, seller_id')
+          .eq('id', roomId)
+          .single();
+
+      final otherId = room['buyer_id'] == _myId
+          ? room['seller_id'] as String
+          : room['buyer_id'] as String;
+
+      final profile = await _supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', otherId)
+          .maybeSingle(); // maybeSingle กัน crash ถ้า user ถูกลบ
+
+      if (mounted && profile != null) {
+        setState(() {
+          _peer = _Peer(
+            id: otherId,
+            name: profile['username'] ?? _peer.name,
+            avatarUrl: profile['avatar_url'] ?? _peer.avatarUrl,
+          );
+        });
+      }
+    } catch (_) {/* ใช้ widget.peerName / peerAvatar เดิม */}
+  }
+
+  // ─────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────
+  Map<String, dynamic> _toMap(LocalMessage m) => {
+    'id': m.id, 'room_id': m.roomId, 'sender_id': m.senderId,
+    'content': m.content, 'created_at': m.createdAt.toIso8601String(),
+    'status': m.status,
+  };
+
+  void _showSnack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: GoogleFonts.manrope(fontSize: 13)),
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      duration: const Duration(seconds: 3),
+    ));
+  }
+
+  String _fmtTime(String iso) {
+    final dt = DateTime.parse(iso).toLocal();
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  // ─────────────────────────────────────────────
+  // BUILD
+  // ─────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white, 
-        elevation: 1, 
-        centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF191C1D), size: 20), 
-          onPressed: () => Navigator.pop(context)
-        ),
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18, 
-              backgroundColor: const Color(0xFFE2E9EC), 
-              backgroundImage: _otherUserAvatar.isNotEmpty ? NetworkImage(_otherUserAvatar) : null, 
-              child: _otherUserAvatar.isEmpty ? const Icon(Icons.person, size: 20, color: Colors.grey) : null
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _otherUserName, 
-                style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF191C1D))
-              )
-            ),
-          ],
-        ),
-      ),
+      backgroundColor: _kBg,
+      appBar: _buildAppBar(),
       body: Column(
         children: [
-          if (widget.product != null) _buildContextCard(),
-          Expanded(
-            child: _isLoadingRoom && _displayMessages.isEmpty
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF35408B)))
-                : ListView.builder(
-                    reverse: true, 
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: _displayMessages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _displayMessages[index];
-                      final isMe = msg['sender_id'] == _myUserId;
-                      final showAvatar = !isMe && (index == _displayMessages.length - 1 || _displayMessages[index + 1]['sender_id'] != msg['sender_id']);
-                      
-                      return _buildMessageBubble(msg['content'], isMe, showAvatar, msg['status'] ?? 'sent');
-                    },
-                  ),
-          ),
-          _buildMessageInput(),
+          if (widget.product != null) _buildProductBanner(),
+          Expanded(child: _buildBody()),
+          _buildInputBar(),
         ],
       ),
     );
   }
 
-  // --- UI Components ---
-
-  Widget _buildMessageBubble(String text, bool isMe, bool showAvatar, String status) {
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (showAvatar) 
-            Padding(
-              padding: const EdgeInsets.only(right: 8, bottom: 8), 
-              child: CircleAvatar(
-                radius: 12, 
-                backgroundColor: const Color(0xFFE2E9EC), 
-                backgroundImage: _otherUserAvatar.isNotEmpty ? NetworkImage(_otherUserAvatar) : null, 
-                child: _otherUserAvatar.isEmpty ? const Icon(Icons.person, size: 14, color: Colors.grey) : null
-              )
-            ),
-          if (!isMe && !showAvatar) const SizedBox(width: 32),
-          Column(
-            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+  PreferredSizeWidget _buildAppBar() => AppBar(
+    backgroundColor: Colors.white,
+    surfaceTintColor: Colors.white,
+    elevation: 0,
+    scrolledUnderElevation: 1,
+    centerTitle: false,
+    leading: IconButton(
+      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF191C1D), size: 20),
+      onPressed: () {
+        FocusScope.of(context).unfocus();
+        Navigator.pop(context);
+      },
+    ),
+    titleSpacing: 0,
+    title: Row(
+      children: [
+        _Avatar(url: _peer.avatarUrl, radius: 18),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                margin: const EdgeInsets.only(bottom: 2), 
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), 
-                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.70),
-                decoration: BoxDecoration(
-                  color: isMe ? const Color(0xFF35408B) : Colors.white, 
-                  borderRadius: BorderRadius.circular(20).copyWith(
-                    bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20), 
-                    bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(4)
-                  ), 
-                  border: isMe ? null : Border.all(color: Colors.grey.withOpacity(0.1))
-                ),
-                child: Text(
-                  text, 
-                  style: GoogleFonts.manrope(fontSize: 15, color: isMe ? Colors.white : const Color(0xFF191C1D))
-                ),
-              ),
-              if (isMe && status == 'sending') 
-                Padding(
-                  padding: const EdgeInsets.only(right: 4, bottom: 4), 
-                  child: Text("กำลังส่ง...", style: GoogleFonts.manrope(fontSize: 9, color: Colors.grey))
-                ),
+              Text(_peer.name,
+                style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF191C1D)),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text('VAULT', style: GoogleFonts.manrope(fontSize: 11, color: Colors.grey[500])),
             ],
           ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildBody() {
+    if (_isInitializing && _messages.isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: _kAccent, strokeWidth: 2));
+    }
+
+    if (_initError != null && _messages.isEmpty) {
+      return Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          Text('โหลดไม่สำเร็จ กรุณาลองใหม่',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () { setState(() { _isInitializing = true; _initError = null; }); _initRoom(); },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            child: Text('ลองใหม่', style: GoogleFonts.manrope(color: Colors.white)),
+          ),
+        ]),
+      );
+    }
+
+    return ListView.builder(
+      controller: _scrollCtrl,
+      reverse: true,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      itemCount: _messages.length + 1, // +1 สำหรับ top indicator
+      itemBuilder: (context, index) {
+        // Top: loading more / end of history
+        if (index == _messages.length) {
+          if (_isLoadingMore) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: SizedBox(width: 20, height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: _kAccent))),
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: Text('— เริ่มต้นการสนทนา —',
+              style: GoogleFonts.manrope(fontSize: 11, color: Colors.grey[400]))),
+          );
+        }
+
+        final msg = _messages[index];
+        final isMe = msg['sender_id'] == _myId;
+        final showAvatar = !isMe &&
+            (index == 0 ||
+            _messages[index - 1]['sender_id'] != msg['sender_id']);
+        final showDate = index == _messages.length - 1 ||
+            !_isSameDay(
+              DateTime.parse(msg['created_at']),
+              DateTime.parse(_messages[index + 1]['created_at']),
+            );
+
+        return Column(children: [
+          if (showDate) _DateDivider(isoString: msg['created_at']),
+          _Bubble(
+              text: msg['content'],
+              time: _fmtTime(msg['created_at']),
+              isMe: isMe,
+              status: msg['status'] ?? 'sent',
+              showAvatar: showAvatar,
+              avatarUrl: _peer.avatarUrl,
+              showTime: _selectedMessageId == msg['id'], // ← เพิ่ม
+              onTap: () {
+                // ← เพิ่ม
+                setState(() {
+                  _selectedMessageId = _selectedMessageId == msg['id']
+                      ? null
+                      : msg['id'];
+                });
+              },
+            ),
+        ]);
+      },
+    );
+  }
+
+  Widget _buildProductBanner() {
+    final p = widget.product!;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kAccent.withOpacity(0.12)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Row(children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(p['image_url'] ?? '', width: 48, height: 48, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(width: 48, height: 48,
+              color: Colors.grey[200],
+              child: const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 20))),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('สนใจสินค้า', style: GoogleFonts.manrope(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(p['name'] ?? 'สินค้า',
+            style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF191C1D)),
+            maxLines: 1, overflow: TextOverflow.ellipsis),
+        ])),
+        const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
+      ]),
+    );
+  }
+
+  Widget _buildInputBar() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -2))],
+    ),
+    child: SafeArea(
+      top: false,
+      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Expanded(
+            child: ClipRRect(
+              // ← ครอบด้วย ClipRRect ตัดทุกอย่างที่เกินออก
+              borderRadius: BorderRadius.circular(24),
+              child: TextField(
+                controller: _textCtrl,
+                style: GoogleFonts.manrope(fontSize: 15),
+                maxLines: 5,
+                minLines: 1,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                textCapitalization: TextCapitalization.none,
+                strutStyle: const StrutStyle(
+                  fontSize: 15,
+                  height: 1.4,
+                  forceStrutHeight:
+                      true, // ← บังคับให้ทุก glyph อยู่ใน line height นี้
+                ),
+                decoration: InputDecoration(
+                  hintText: 'พิมพ์ข้อความ...',
+                  hintStyle: GoogleFonts.manrope(
+                    color: Colors.grey[400],
+                    fontSize: 15,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F7FA),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  isDense: true,
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(width: 10),
+        _SendBtn(onTap: _sendMessage),
+      ]),
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────
+// SMALL WIDGETS
+// ─────────────────────────────────────────────
+class _Avatar extends StatelessWidget {
+  final String url;
+  final double radius;
+  const _Avatar({required this.url, required this.radius});
+
+  @override
+  Widget build(BuildContext context) => CircleAvatar(
+    radius: radius,
+    backgroundColor: const Color(0xFFE2E9EC),
+    backgroundImage: url.isNotEmpty ? NetworkImage(url) : null,
+    child: url.isEmpty ? Icon(Icons.person_rounded, size: radius, color: Colors.grey[500]) : null,
+  );
+}
+
+class _SendBtn extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SendBtn({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 44, height: 44,
+      decoration: const BoxDecoration(color: _kAccent, shape: BoxShape.circle),
+      child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+    ),
+  );
+}
+
+class _DateDivider extends StatelessWidget {
+  final String isoString;
+  const _DateDivider({required this.isoString});
+
+  @override
+  Widget build(BuildContext context) {
+    final dt = DateTime.parse(isoString).toLocal();
+    final now = DateTime.now();
+    final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
+    final isYesterday = dt.year == now.year && dt.month == now.month && dt.day == now.day - 1;
+    final label = isToday ? 'วันนี้' : isYesterday ? 'เมื่อวาน' : '${dt.day}/${dt.month}/${dt.year}';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(children: [
+        Expanded(child: Divider(color: Colors.grey[300], thickness: 0.5)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(label, style: GoogleFonts.manrope(fontSize: 11, color: Colors.grey[400], fontWeight: FontWeight.w600)),
+        ),
+        Expanded(child: Divider(color: Colors.grey[300], thickness: 0.5)),
+      ]),
+    );
+  }
+}
+
+class _Bubble extends StatelessWidget {
+  final String text;
+  final String time;
+  final bool isMe;
+  final String status;
+  final bool showAvatar;
+  final String avatarUrl;
+  final bool showTime; // ← เพิ่ม
+  final VoidCallback onTap; // ← เพิ่ม
+
+  const _Bubble({
+    required this.text,
+    required this.time,
+    required this.isMe,
+    required this.status,
+    required this.showAvatar,
+    required this.avatarUrl,
+    required this.showTime,
+    required this.onTap, // ← เพิ่ม
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe)
+            showAvatar
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 8, bottom: 4),
+                    child: _Avatar(url: avatarUrl, radius: 13),
+                  )
+                : const SizedBox(width: 34),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.68,
+            ),
+            child: Column(
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  // ← ครอบ bubble ด้วย GestureDetector
+                  onTap: onTap,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isMe ? _kAccent : Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(18),
+                        topRight: const Radius.circular(18),
+                        bottomLeft: Radius.circular(isMe ? 18 : 4),
+                        bottomRight: Radius.circular(isMe ? 4 : 18),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      text,
+                      style: GoogleFonts.manrope(
+                        fontSize: 15,
+                        height: 1.4,
+                        color: isMe ? Colors.white : const Color(0xFF191C1D),
+                      ),
+                    ),
+                  ),
+                ),
+                // ซ่อน/แสดงด้วย AnimatedSize ให้ smooth
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  child: showTime
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                time,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 10,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                              if (isMe) ...[
+                                const SizedBox(width: 4),
+                                _StatusIcon(status: status),
+                              ],
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(), // ← ซ่อนเวลาตอนไม่ได้กด
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildContextCard() {
-    return Container(
-      margin: const EdgeInsets.all(16), 
-      padding: const EdgeInsets.all(12), 
-      decoration: BoxDecoration(
-        color: Colors.white, 
-        borderRadius: BorderRadius.circular(16), 
-        border: Border.all(color: const Color(0xFF35408B).withOpacity(0.1))
-      ), 
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8), 
-            child: Image.network(widget.product!['image_url'] ?? '', width: 44, height: 44, fit: BoxFit.cover)
-          ), 
-          const SizedBox(width: 12), 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start, 
-              children: [
-                Text("สนใจสินค้า:", style: GoogleFonts.manrope(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)), 
-                Text(widget.product!['name'] ?? 'Product', style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.bold), maxLines: 1)
-              ]
-            )
-          )
-        ]
-      )
-    );
-  }
+class _StatusIcon extends StatelessWidget {
+  final String status;
+  const _StatusIcon({required this.status});
 
-  Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
-      decoration: BoxDecoration(
-        color: Colors.white, 
-        border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.1)))
-      ), 
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _messageController, 
-                style: GoogleFonts.manrope(), 
-                decoration: InputDecoration(
-                  hintText: "พิมพ์ข้อความ...", 
-                  filled: true, 
-                  fillColor: const Color(0xFFF5F7FA), 
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none), 
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)
-                )
-              )
-            ), 
-            const SizedBox(width: 12), 
-            GestureDetector(
-              onTap: _sendMessage, 
-              child: Container(
-                padding: const EdgeInsets.all(12), 
-                decoration: const BoxDecoration(color: Color(0xFF35408B), shape: BoxShape.circle), 
-                child: const Icon(Icons.send_rounded, color: Colors.white, size: 18)
-              )
-            )
-          ]
-        )
-      )
-    );
+  @override
+  Widget build(BuildContext context) {
+    switch (status) {
+      case 'sending':
+        return SizedBox(width: 10, height: 10,
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.grey[400]));
+      case 'error':
+        return Icon(Icons.error_outline_rounded, size: 12, color: Colors.red[400]);
+      default:
+        return Icon(Icons.done_rounded, size: 12, color: Colors.grey[400]);
+    }
   }
 }
