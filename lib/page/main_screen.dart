@@ -1,8 +1,8 @@
-import 'dart:ui'; 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// 💡 Import หน้าต่างๆ เข้ามาให้ครบ
+// Import หน้าต่างๆ
 import 'discover_page.dart';
 import 'chat_list_page.dart'; 
 import 'post_item_page.dart';
@@ -18,7 +18,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  // 💡 สร้างกุญแจสำหรับควบคุมหน้าลูกๆ (ระบุ Type ให้ชัดเจน)
   final GlobalKey<DiscoverPageState> _discoverKey = GlobalKey<DiscoverPageState>();
   final GlobalKey<ChatListPageState> _chatKey = GlobalKey<ChatListPageState>(); 
   final GlobalKey<PostItemPageState> _sellKey = GlobalKey<PostItemPageState>();
@@ -29,7 +28,6 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    // 💡 จัดลำดับหน้าให้ตรงกับ Index ของปุ่มกด (0, 1, 2, 4)
     _pages = [
       DiscoverPage(key: _discoverKey), // Index 0 (SHOP)
       ChatListPage(key: _chatKey),     // Index 1 (CHAT)
@@ -41,26 +39,24 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(
-        dragDevices: {
-          PointerDeviceKind.touch,
-          PointerDeviceKind.mouse,
-          PointerDeviceKind.trackpad,
-        },
-      ),
-      child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages, 
+    return Scaffold(
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: IndexedStack(
+            key: ValueKey<int>(_currentIndex),
+            index: _currentIndex,
+            children: _pages, 
+          ),
         ),
         
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF4D58A5).withOpacity(0.06),
+                color: const Color(0xFF4D58A5).withValues(alpha: 0.06),
                 blurRadius: 40,
                 offset: const Offset(0, -10),
               )
@@ -82,16 +78,16 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ),
-      ),
     );
   }
 
-  // 💡 ปุ่มเมนูทั่วไป (SHOP, CHAT, PROFILE)
+  // ปุ่มเมนูทั่วไป (SHOP, CHAT, PROFILE) — เพิ่ม haptic + active dot
   Widget _buildNavItem(IconData icon, String label, int index) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
       behavior: HitTestBehavior.opaque, 
       onTap: () {
+        HapticFeedback.selectionClick();
         if (_currentIndex == index) {
           // ระบบ Double Tap: กดย้ำหน้าเดิมให้เลื่อนขึ้นบนสุด/รีเฟรช
           if (index == 0) _discoverKey.currentState?.scrollToTopAndRefresh();
@@ -106,7 +102,10 @@ class _MainScreenState extends State<MainScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isSelected ? const Color(0xFF4D58A5) : Colors.grey[400]),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(icon, color: isSelected ? const Color(0xFF4D58A5) : Colors.grey[400]),
+            ),
             const SizedBox(height: 4),
             Text(
               label,
@@ -117,20 +116,31 @@ class _MainScreenState extends State<MainScreen> {
                 color: isSelected ? const Color(0xFF4D58A5) : Colors.grey[400],
               ),
             ),
+            // ── Active tab dot ──
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(top: 4),
+              width: isSelected ? 5 : 0,
+              height: isSelected ? 5 : 0,
+              decoration: const BoxDecoration(
+                color: Color(0xFF4D58A5),
+                shape: BoxShape.circle,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  // 💡 ปุ่มลงขายสินค้า (SELL)
+  // ปุ่มลงขายสินค้า (SELL) — เพิ่ม haptic
   Widget _buildSellButton() {
     final isSelected = _currentIndex == 2; 
     return GestureDetector(
       behavior: HitTestBehavior.opaque, 
       onTap: () {
+        HapticFeedback.mediumImpact();
         setState(() => _currentIndex = 2);
-        // เมื่อกดมาหน้า Sell ให้เด้งขึ้นบนสุดทันที ไม่ค้างอยู่ที่เดิม
         _sellKey.currentState?.jumpToTop();
       },
       child: Container(
@@ -151,6 +161,17 @@ class _MainScreenState extends State<MainScreen> {
                 fontWeight: FontWeight.bold,
                 color: isSelected ? const Color(0xFF35408B) : Colors.grey[400], 
                 letterSpacing: 0.5,
+              ),
+            ),
+            // ── Active dot for SELL tab ──
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(top: 4),
+              width: isSelected ? 5 : 0,
+              height: isSelected ? 5 : 0,
+              decoration: const BoxDecoration(
+                color: Color(0xFF35408B),
+                shape: BoxShape.circle,
               ),
             ),
           ],

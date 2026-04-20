@@ -15,6 +15,55 @@ const _kAccent = Color(0xFF35408B);
 const _kBg = Color(0xFFF8F9FA);
 
 // ─────────────────────────────────────────────
+// Thai Input Formatter — ป้องกันวรรณยุกต์/สระลอยซ้อนกัน
+// (มาตรฐานเดียวกับ LINE, WhatsApp)
+// ─────────────────────────────────────────────
+class _ThaiInputFormatter extends TextInputFormatter {
+  /// ตรวจว่าเป็นอักขระประสม (สระบน/ล่าง, วรรณยุกต์, ทัณฑฆาต ฯลฯ) หรือไม่
+  static bool _isCombining(int c) =>
+      (c >= 0x0E31 && c <= 0x0E3A) || // ั ิ ี ึ ื ุ ู
+      (c >= 0x0E47 && c <= 0x0E4E); // ็ ่ ้ ๊ ๋ ์ ํ ๎
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.isEmpty) return newValue;
+
+    final buf = StringBuffer();
+    int combiningCount = 0;
+
+    for (int i = 0; i < text.length; i++) {
+      final c = text.codeUnitAt(i);
+      if (_isCombining(c)) {
+        combiningCount++;
+        if (combiningCount <= 2)
+          buf.writeCharCode(c); // อนุญาตสูงสุด 2 ตัว (เช่น กิ้)
+      } else {
+        combiningCount = 0;
+        buf.writeCharCode(c);
+      }
+    }
+
+    final cleaned = buf.toString();
+    if (cleaned == text) return newValue;
+
+    // ปรับตำแหน่ง cursor ให้ถูกต้อง
+    final diff = text.length - cleaned.length;
+    final newOffset = (newValue.selection.baseOffset - diff).clamp(
+      0,
+      cleaned.length,
+    );
+    return TextEditingValue(
+      text: cleaned,
+      selection: TextSelection.collapsed(offset: newOffset),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
 // PEER MODEL
 // ─────────────────────────────────────────────
 class _Peer {
@@ -24,10 +73,10 @@ class _Peer {
   const _Peer({required this.id, required this.name, required this.avatarUrl});
 
   _Peer copyWith({String? name, String? avatarUrl}) => _Peer(
-        id: id,
-        name: name ?? this.name,
-        avatarUrl: avatarUrl ?? this.avatarUrl,
-      );
+    id: id,
+    name: name ?? this.name,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -70,7 +119,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   List<Map<String, dynamic>> _messages = [];
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  String? _oldestCursor; // id ของข้อความเก่าสุดที่โหลดมาแล้ว
+  String? _oldestCursor; // created_at ของข้อความเก่าสุดที่โหลดมาแล้ว
 
   // ── controllers ───────────────────────────────
   final _textCtrl = TextEditingController();
@@ -116,15 +165,16 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       _roomId = roomId;
       _loadCache(); // แสดง offline cache ก่อนเลย
 
-      await Future.wait([
-        _fetchRecent(roomId),
-        _fetchPeer(roomId),
-      ]);
+      await Future.wait([_fetchRecent(roomId), _fetchPeer(roomId)]);
 
       _setupStream(roomId);
       if (mounted) setState(() => _isInitializing = false);
     } catch (e) {
-      if (mounted) setState(() { _isInitializing = false; _initError = e.toString(); });
+      if (mounted)
+        setState(() {
+          _isInitializing = false;
+          _initError = e.toString();
+        });
     }
   }
 
@@ -137,8 +187,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     final existing = await _supabase
         .from('chat_rooms')
         .select('id')
-        .or('and(buyer_id.eq.$_myId,seller_id.eq.$peerId),'
-            'and(buyer_id.eq.$peerId,seller_id.eq.$_myId)')
+        .or(
+          'and(buyer_id.eq.$_myId,seller_id.eq.$peerId),'
+          'and(buyer_id.eq.$peerId,seller_id.eq.$_myId)',
+        )
         .maybeSingle();
 
     if (existing != null) return existing['id'] as String;
@@ -157,9 +209,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   // ─────────────────────────────────────────────
   void _loadCache() {
     if (_roomId == null) return;
-    final cached = _box.values
-        .where((m) => m.roomId == _roomId)
-        .toList()
+    final cached = _box.values.where((m) => m.roomId == _roomId).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     if (mounted && cached.isNotEmpty) {
@@ -168,54 +218,64 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   }
 
   Future<void> _fetchRecent(String roomId) async {
-    final data = await _supabase
-        .from('messages')
-        .select()
-        .eq('room_id', roomId)
-        .order('created_at', ascending: false)
-        .limit(_kPageSize) as List<dynamic>;
+    final data =
+        await _supabase
+                .from('messages')
+                .select()
+                .eq('room_id', roomId)
+                .order('created_at', ascending: false)
+                .limit(_kPageSize)
+            as List<dynamic>;
 
     _saveAndSync(data.cast<Map<String, dynamic>>());
 
     _hasMore = data.length == _kPageSize;
-    if (_hasMore && data.isNotEmpty) _oldestCursor = data.last['id'] as String?;
+    if (_hasMore && data.isNotEmpty)
+      _oldestCursor = data.last['created_at'] as String?;
   }
 
   Future<void> _loadMore() async {
-    if (_isLoadingMore || !_hasMore || _roomId == null || _oldestCursor == null) return;
+    if (_isLoadingMore || !_hasMore || _roomId == null || _oldestCursor == null)
+      return;
     if (mounted) setState(() => _isLoadingMore = true);
 
     try {
-      final data = await _supabase
-          .from('messages')
-          .select()
-          .eq('room_id', _roomId!)
-          .lt('id', _oldestCursor!) // cursor-based pagination
-          .order('created_at', ascending: false)
-          .limit(_kPageSize) as List<dynamic>;
+      final data =
+          await _supabase
+                  .from('messages')
+                  .select()
+                  .eq('room_id', _roomId!)
+                  .lt('created_at', _oldestCursor!) // cursor-based pagination
+                  .order('created_at', ascending: false)
+                  .limit(_kPageSize)
+              as List<dynamic>;
 
       final msgs = data.cast<Map<String, dynamic>>();
       if (msgs.length < _kPageSize) _hasMore = false;
       if (msgs.isNotEmpty) {
-        _oldestCursor = msgs.last['id'] as String?;
+        _oldestCursor = msgs.last['created_at'] as String?;
         _saveAndSync(msgs);
       }
-    } catch (_) {/* ผู้ใช้ pull-to-refresh ใหม่ได้ */}
-    finally {
+    } catch (_) {
+      /* ผู้ใช้ pull-to-refresh ใหม่ได้ */
+    } finally {
       if (mounted) setState(() => _isLoadingMore = false);
     }
   }
 
   void _saveAndSync(List<Map<String, dynamic>> remoteList) {
     for (final msg in remoteList) {
-      _box.put(msg['id'], LocalMessage(
-        id: msg['id'],
-        roomId: msg['room_id'],
-        senderId: msg['sender_id'],
-        content: msg['content'],
-        createdAt: DateTime.parse(msg['created_at']),
-        status: 'sent',
-      ));
+      _box.put(
+        msg['id'],
+        LocalMessage(
+          id: msg['id'],
+          roomId: msg['room_id'],
+          senderId: msg['sender_id'],
+          content: msg['content'],
+          createdAt: DateTime.parse(msg['created_at']),
+          status: 'sent',
+        ),
+      );
     }
     _loadCache();
   }
@@ -229,13 +289,16 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         .limit(_kPageSize) // ไม่ดึงทั้งหมด
         .listen(
           (data) => _saveAndSync(data),
-          onError: (_) {/* silent — local cache ยังแสดงได้ */},
+          onError: (_) {
+            /* silent — local cache ยังแสดงได้ */
+          },
         );
   }
 
   void _onScroll() {
     // reverse list → scroll ขึ้น = ใกล้ maxScrollExtent
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 300) {
+    if (_scrollCtrl.position.pixels >=
+        _scrollCtrl.position.maxScrollExtent - 300) {
       _loadMore();
     }
   }
@@ -254,10 +317,17 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     final now = DateTime.now();
 
     // 1. Optimistic update
-    await _box.put(tempId, LocalMessage(
-      id: tempId, roomId: _roomId!, senderId: _myId,
-      content: text, createdAt: now, status: 'sending',
-    ));
+    await _box.put(
+      tempId,
+      LocalMessage(
+        id: tempId,
+        roomId: _roomId!,
+        senderId: _myId,
+        content: text,
+        createdAt: now,
+        status: 'sending',
+      ),
+    );
     _loadCache();
 
     try {
@@ -270,27 +340,46 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
       // 3. swap temp → real
       await _box.delete(tempId);
-      await _box.put(res['id'], LocalMessage(
-        id: res['id'], roomId: _roomId!, senderId: _myId,
-        content: text, createdAt: DateTime.parse(res['created_at']), status: 'sent',
-      ));
+      await _box.put(
+        res['id'],
+        LocalMessage(
+          id: res['id'],
+          roomId: _roomId!,
+          senderId: _myId,
+          content: text,
+          createdAt: DateTime.parse(res['created_at']),
+          status: 'sent',
+        ),
+      );
       _loadCache();
 
       // 4. อัปเดต last_message + แจ้ง inbox
-      unawaited(_supabase.from('chat_rooms').update({
-        'last_message': text,
-        'last_message_time': now.toIso8601String(),
-      }).eq('id', _roomId!));
+      unawaited(
+        _supabase
+            .from('chat_rooms')
+            .update({
+              'last_message': text,
+              'last_message_time': now.toIso8601String(),
+            })
+            .eq('id', _roomId!),
+      );
 
       ChatEvents.instance.notifyRoomUpdated(_roomId!);
     } catch (_) {
       if (mounted) {
         _showSnack('ส่งไม่สำเร็จ — กรุณาลองใหม่');
         // mark error
-        await _box.put(tempId, LocalMessage(
-          id: tempId, roomId: _roomId!, senderId: _myId,
-          content: text, createdAt: now, status: 'error',
-        ));
+        await _box.put(
+          tempId,
+          LocalMessage(
+            id: tempId,
+            roomId: _roomId!,
+            senderId: _myId,
+            content: text,
+            createdAt: now,
+            status: 'error',
+          ),
+        );
         _loadCache();
       }
     }
@@ -326,27 +415,34 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           );
         });
       }
-    } catch (_) {/* ใช้ widget.peerName / peerAvatar เดิม */}
+    } catch (_) {
+      /* ใช้ widget.peerName / peerAvatar เดิม */
+    }
   }
 
   // ─────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────
   Map<String, dynamic> _toMap(LocalMessage m) => {
-    'id': m.id, 'room_id': m.roomId, 'sender_id': m.senderId,
-    'content': m.content, 'created_at': m.createdAt.toIso8601String(),
+    'id': m.id,
+    'room_id': m.roomId,
+    'sender_id': m.senderId,
+    'content': m.content,
+    'created_at': m.createdAt.toIso8601String(),
     'status': m.status,
   };
 
   void _showSnack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.manrope(fontSize: 13)),
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      duration: const Duration(seconds: 3),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.manrope(fontSize: 13)),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   String _fmtTime(String iso) {
@@ -382,7 +478,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     scrolledUnderElevation: 1,
     centerTitle: false,
     leading: IconButton(
-      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF191C1D), size: 20),
+      icon: const Icon(
+        Icons.arrow_back_ios_new_rounded,
+        color: Color(0xFF191C1D),
+        size: 20,
+      ),
       onPressed: () {
         FocusScope.of(context).unfocus();
         Navigator.pop(context);
@@ -397,10 +497,23 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_peer.name,
-                style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF191C1D)),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text('VAULT', style: GoogleFonts.manrope(fontSize: 11, color: Colors.grey[500])),
+              Text(
+                _peer.name,
+                style: GoogleFonts.manrope(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF191C1D),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                'VAULT',
+                style: GoogleFonts.manrope(
+                  fontSize: 11,
+                  color: Colors.grey[500],
+                ),
+              ),
             ],
           ),
         ),
@@ -410,26 +523,45 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   Widget _buildBody() {
     if (_isInitializing && _messages.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: _kAccent, strokeWidth: 2));
+      return const Center(
+        child: CircularProgressIndicator(color: _kAccent, strokeWidth: 2),
+      );
     }
 
     if (_initError != null && _messages.isEmpty) {
       return Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
-          const SizedBox(height: 12),
-          Text('โหลดไม่สำเร็จ กรุณาลองใหม่',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.manrope(color: Colors.grey[600])),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () { setState(() { _isInitializing = true; _initError = null; }); _initRoom(); },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _kAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: Text('ลองใหม่', style: GoogleFonts.manrope(color: Colors.white)),
-          ),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
+            const SizedBox(height: 12),
+            Text(
+              'โหลดไม่สำเร็จ กรุณาลองใหม่',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.manrope(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isInitializing = true;
+                  _initError = null;
+                });
+                _initRoom();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'ลองใหม่',
+                style: GoogleFonts.manrope(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -444,31 +576,49 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           if (_isLoadingMore) {
             return const Padding(
               padding: EdgeInsets.all(16),
-              child: Center(child: SizedBox(width: 20, height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: _kAccent))),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: _kAccent,
+                  ),
+                ),
+              ),
             );
           }
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Text('— เริ่มต้นการสนทนา —',
-              style: GoogleFonts.manrope(fontSize: 11, color: Colors.grey[400]))),
+            child: Center(
+              child: Text(
+                '— เริ่มต้นการสนทนา —',
+                style: GoogleFonts.manrope(
+                  fontSize: 11,
+                  color: Colors.grey[400],
+                ),
+              ),
+            ),
           );
         }
 
         final msg = _messages[index];
         final isMe = msg['sender_id'] == _myId;
-        final showAvatar = !isMe &&
+        final showAvatar =
+            !isMe &&
             (index == 0 ||
-            _messages[index - 1]['sender_id'] != msg['sender_id']);
-        final showDate = index == _messages.length - 1 ||
+                _messages[index - 1]['sender_id'] != msg['sender_id']);
+        final showDate =
+            index == _messages.length - 1 ||
             !_isSameDay(
               DateTime.parse(msg['created_at']),
               DateTime.parse(_messages[index + 1]['created_at']),
             );
 
-        return Column(children: [
-          if (showDate) _DateDivider(isoString: msg['created_at']),
-          _Bubble(
+        return Column(
+          children: [
+            if (showDate) _DateDivider(isoString: msg['created_at']),
+            _Bubble(
               text: msg['content'],
               time: _fmtTime(msg['created_at']),
               isMe: isMe,
@@ -485,7 +635,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 });
               },
             ),
-        ]);
+          ],
+        );
       },
     );
   }
@@ -498,27 +649,66 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _kAccent.withOpacity(0.12)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: _kAccent.withValues(alpha: 0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.network(p['image_url'] ?? '', width: 48, height: 48, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(width: 48, height: 48,
-              color: Colors.grey[200],
-              child: const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 20))),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('สนใจสินค้า', style: GoogleFonts.manrope(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.w600)),
-          const SizedBox(height: 2),
-          Text(p['name'] ?? 'สินค้า',
-            style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF191C1D)),
-            maxLines: 1, overflow: TextOverflow.ellipsis),
-        ])),
-        const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
-      ]),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              p['image_url'] ?? '',
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 48,
+                height: 48,
+                color: Colors.grey[200],
+                child: const Icon(
+                  Icons.image_not_supported_outlined,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'สนใจสินค้า',
+                  style: GoogleFonts.manrope(
+                    fontSize: 10,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  p['name'] ?? 'สินค้า',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF191C1D),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
+        ],
+      ),
     );
   }
 
@@ -526,61 +716,75 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     decoration: BoxDecoration(
       color: Colors.white,
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -2))],
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.06),
+          blurRadius: 12,
+          offset: const Offset(0, -2),
+        ),
+      ],
     ),
     child: SafeArea(
       top: false,
-      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Expanded(
-            child: ClipRRect(
-              // ← ครอบด้วย ClipRRect ตัดทุกอย่างที่เกินออก
-              borderRadius: BorderRadius.circular(24),
-              child: TextField(
-                controller: _textCtrl,
-                style: GoogleFonts.manrope(fontSize: 15),
-                maxLines: 5,
-                minLines: 1,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.newline,
-                textCapitalization: TextCapitalization.none,
-                strutStyle: const StrutStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  forceStrutHeight:
-                      true, // ← บังคับให้ทุก glyph อยู่ใน line height นี้
-                ),
-                decoration: InputDecoration(
-                  hintText: 'พิมพ์ข้อความ...',
-                  hintStyle: GoogleFonts.manrope(
-                    color: Colors.grey[400],
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            // ConstrainedBox จำกัดความสูงสูงสุดของช่องพิมพ์ไม่ให้บานออก
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 140),
+              child: ClipRRect(
+                // ← ครอบด้วย ClipRRect ตัดทุกอย่างที่เกินออก
+                borderRadius: BorderRadius.circular(24),
+                child: TextField(
+                  controller: _textCtrl,
+                  style: GoogleFonts.manrope(fontSize: 15, height: 1.4),
+                  maxLines: 5,
+                  minLines: 1,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  textCapitalization: TextCapitalization.none,
+                  inputFormatters: [_ThaiInputFormatter()],
+                  strutStyle: const StrutStyle(
                     fontSize: 15,
+                    height: 1.4,
+                    forceStrutHeight:
+                        true, // ← บังคับให้ทุก glyph อยู่ใน line height นี้
                   ),
-                  filled: true,
-                  fillColor: const Color(0xFFF5F7FA),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
+                  decoration: InputDecoration(
+                    hintText: 'พิมพ์ข้อความ...',
+                    hintStyle: GoogleFonts.manrope(
+                      color: Colors.grey[400],
+                      fontSize: 15,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F7FA),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    isDense: true,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  isDense: true,
                 ),
               ),
             ),
           ),
-        const SizedBox(width: 10),
-        _SendBtn(onTap: _sendMessage),
-      ]),
+          const SizedBox(width: 10),
+          _SendBtn(onTap: _sendMessage),
+        ],
+      ),
     ),
   );
 }
@@ -598,7 +802,9 @@ class _Avatar extends StatelessWidget {
     radius: radius,
     backgroundColor: const Color(0xFFE2E9EC),
     backgroundImage: url.isNotEmpty ? NetworkImage(url) : null,
-    child: url.isEmpty ? Icon(Icons.person_rounded, size: radius, color: Colors.grey[500]) : null,
+    child: url.isEmpty
+        ? Icon(Icons.person_rounded, size: radius, color: Colors.grey[500])
+        : null,
   );
 }
 
@@ -610,7 +816,8 @@ class _SendBtn extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Container(
-      width: 44, height: 44,
+      width: 44,
+      height: 44,
       decoration: const BoxDecoration(color: _kAccent, shape: BoxShape.circle),
       child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
     ),
@@ -625,20 +832,38 @@ class _DateDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final dt = DateTime.parse(isoString).toLocal();
     final now = DateTime.now();
-    final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
-    final isYesterday = dt.year == now.year && dt.month == now.month && dt.day == now.day - 1;
-    final label = isToday ? 'วันนี้' : isYesterday ? 'เมื่อวาน' : '${dt.day}/${dt.month}/${dt.year}';
+    final isToday =
+        dt.year == now.year && dt.month == now.month && dt.day == now.day;
+    final yesterday = now.subtract(const Duration(days: 1));
+    final isYesterday =
+        dt.year == yesterday.year &&
+        dt.month == yesterday.month &&
+        dt.day == yesterday.day;
+    final label = isToday
+        ? 'วันนี้'
+        : isYesterday
+        ? 'เมื่อวาน'
+        : '${dt.day}/${dt.month}/${dt.year}';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(children: [
-        Expanded(child: Divider(color: Colors.grey[300], thickness: 0.5)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(label, style: GoogleFonts.manrope(fontSize: 11, color: Colors.grey[400], fontWeight: FontWeight.w600)),
-        ),
-        Expanded(child: Divider(color: Colors.grey[300], thickness: 0.5)),
-      ]),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: Colors.grey[300], thickness: 0.5)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              label,
+              style: GoogleFonts.manrope(
+                fontSize: 11,
+                color: Colors.grey[400],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(child: Divider(color: Colors.grey[300], thickness: 0.5)),
+        ],
+      ),
     );
   }
 }
@@ -693,11 +918,26 @@ class _Bubble extends StatelessWidget {
                 GestureDetector(
                   // ← ครอบ bubble ด้วย GestureDetector
                   onTap: onTap,
+                  onLongPress: () {
+                    HapticFeedback.mediumImpact();
+                    Clipboard.setData(ClipboardData(text: text));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('คัดลอกข้อความแล้ว', style: GoogleFonts.manrope(fontSize: 13)),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                        margin: const EdgeInsets.all(16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 10,
                     ),
+                    clipBehavior:
+                        Clip.hardEdge, // ← ตัดตัวอักษรที่ล้นออกจากกรอบ
                     decoration: BoxDecoration(
                       color: isMe ? _kAccent : Colors.white,
                       borderRadius: BorderRadius.only(
@@ -708,7 +948,7 @@ class _Bubble extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -720,6 +960,11 @@ class _Bubble extends StatelessWidget {
                         fontSize: 15,
                         height: 1.4,
                         color: isMe ? Colors.white : const Color(0xFF191C1D),
+                      ),
+                      strutStyle: const StrutStyle(
+                        fontSize: 15,
+                        height: 1.4,
+                        forceStrutHeight: true,
                       ),
                     ),
                   ),
@@ -767,10 +1012,20 @@ class _StatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (status) {
       case 'sending':
-        return SizedBox(width: 10, height: 10,
-          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.grey[400]));
+        return SizedBox(
+          width: 10,
+          height: 10,
+          child: CircularProgressIndicator(
+            strokeWidth: 1.5,
+            color: Colors.grey[400],
+          ),
+        );
       case 'error':
-        return Icon(Icons.error_outline_rounded, size: 12, color: Colors.red[400]);
+        return Icon(
+          Icons.error_outline_rounded,
+          size: 12,
+          color: Colors.red[400],
+        );
       default:
         return Icon(Icons.done_rounded, size: 12, color: Colors.grey[400]);
     }

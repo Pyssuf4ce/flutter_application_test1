@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:intl/intl.dart';
 import 'chat_room_page.dart';
 import 'chat_events.dart'; // EventBus แทน globalRefresh
 
@@ -201,7 +200,7 @@ class ChatListPageState extends State<ChatListPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.chat_bubble_outline_rounded,
-                size: 72, color: Colors.grey.withOpacity(0.25)),
+                size: 72, color: Colors.grey.withValues(alpha: 0.25)),
             const SizedBox(height: 16),
             Text('ยังไม่มีการสนทนา',
                 style: GoogleFonts.manrope(

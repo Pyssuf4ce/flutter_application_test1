@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart'; 
+import '../core/constants.dart';
 import 'product_detail_page.dart'; 
 
 class PostItemPage extends StatefulWidget {
@@ -21,16 +22,8 @@ class PostItemPageState extends State<PostItemPage> {
   final _descController = TextEditingController(); 
   final ScrollController _scrollController = ScrollController();
   
-  String _selectedCategory = 'แฟชั่น'; 
-  final List<String> _categories = [
-    'แฟชั่น', 
-    'ไอที/อุปกรณ์', 
-    'ความงาม', 
-    'งานบริการ', 
-    'อาหาร', 
-    'ของสะสม', 
-    'ทั่วไป'
-  ];
+  String _selectedCategory = kProductCategories.first; 
+  final List<String> _categories = kProductCategories;
 
   final List<XFile> _pickedFiles = []; 
   final List<Uint8List> _imagesBytes = []; 
@@ -157,7 +150,7 @@ class PostItemPageState extends State<PostItemPage> {
     _descController.clear();
     _pickedFiles.clear();
     _imagesBytes.clear();
-    setState(() => _selectedCategory = 'แฟชั่น'); 
+    setState(() => _selectedCategory = kProductCategories.first); 
   }
 
   void _showSnackBar(String msg, Color color) {
@@ -172,7 +165,30 @@ class PostItemPageState extends State<PostItemPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        // ถ้ายังไม่ได้กรอกอะไร — ออกได้เลย
+        if (_nameController.text.isEmpty && _priceController.text.isEmpty && _imagesBytes.isEmpty) {
+          Navigator.of(context).pop();
+          return;
+        }
+        final shouldLeave = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text('ทิ้งข้อมูลที่กรอกไว้?', style: GoogleFonts.manrope(fontWeight: FontWeight.bold)),
+            content: Text('ถ้าออกจากหน้านี้ ข้อมูลที่กรอกไว้จะหายไป', style: GoogleFonts.manrope(color: Colors.grey[600])),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('อยู่ต่อ', style: GoogleFonts.manrope(color: const Color(0xFF35408B)))),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('ทิ้ง', style: GoogleFonts.manrope(color: Colors.red))),
+            ],
+          ),
+        );
+        if (shouldLeave == true && context.mounted) Navigator.of(context).pop();
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -254,7 +270,7 @@ class PostItemPageState extends State<PostItemPage> {
 
             _buildInputField("ชื่อสินค้า", "ขายอะไรดีวันนี้?", _nameController, TextInputType.text),
             const SizedBox(height: 16),
-            _buildInputField("ราคา (บาท)", "ตั้งราคาที่คุณพอใจ", _priceController, const TextInputType.numberWithOptions(decimal: true)),
+            _buildInputField("ราคา (บาท)", "ตั้งราคาที่คุณพอใจ", _priceController, const TextInputType.numberWithOptions(decimal: true), isPriceField: true),
             const SizedBox(height: 16),
             
             Text("หมวดหมู่", style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.bold)),
@@ -310,10 +326,11 @@ class PostItemPageState extends State<PostItemPage> {
           ],
         ),
       ),
-    );
+    ),
+   );
   }
 
-  Widget _buildInputField(String label, String hint, TextEditingController controller, TextInputType type, {int maxLines = 1}) {
+  Widget _buildInputField(String label, String hint, TextEditingController controller, TextInputType type, {int maxLines = 1, bool isPriceField = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -323,6 +340,7 @@ class PostItemPageState extends State<PostItemPage> {
           controller: controller,
           keyboardType: type,
           maxLines: maxLines,
+          inputFormatters: isPriceField ? [_PriceInputFormatter()] : null,
           style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: const Color(0xFF191C1D), fontSize: 15),
           decoration: InputDecoration(
             hintText: hint,
@@ -331,9 +349,31 @@ class PostItemPageState extends State<PostItemPage> {
             fillColor: const Color(0xFFF5F7FA),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            prefixText: isPriceField ? '฿ ' : null,
+            prefixStyle: GoogleFonts.manrope(fontWeight: FontWeight.bold, color: const Color(0xFF35408B), fontSize: 16),
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Price input formatter: ใส่ comma ขณะพิมพ์ ──
+class _PriceInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.isEmpty) return const TextEditingValue();
+
+    final number = int.tryParse(digits) ?? 0;
+    final formatted = number.toString().replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

@@ -1,4 +1,3 @@
-import 'dart:typed_data'; 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart'; 
@@ -155,7 +154,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle, color: const Color(0xFFE2E9EC),
                           image: _avatarUrl.isNotEmpty ? DecorationImage(image: NetworkImage(_avatarUrl), fit: BoxFit.cover) : null,
-                          boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
+                          boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10))],
                         ),
                         child: _avatarUrl.isEmpty ? const Icon(Icons.person, size: 50, color: Color(0xFF4D58A5)) : null,
                       ),
@@ -164,7 +163,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         onPressed: _changeAvatar,
                         icon: const Icon(Icons.photo_camera, size: 16, color: Color(0xFF35408B)),
                         label: const Text("Change Photo", style: TextStyle(color: Color(0xFF35408B), fontWeight: FontWeight.bold)),
-                        style: TextButton.styleFrom(backgroundColor: const Color(0xFFD1DDFA).withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+                        style: TextButton.styleFrom(backgroundColor: const Color(0xFFD1DDFA).withValues(alpha: 0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
                       ),
                     ],
                   ),
@@ -192,7 +191,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
       child: Row(
         children: [
           Expanded(
@@ -208,7 +207,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           if (onEdit != null)
             TextButton(
               onPressed: onEdit,
-              style: TextButton.styleFrom(backgroundColor: const Color(0xFFD1DDFA).withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              style: TextButton.styleFrom(backgroundColor: const Color(0xFFD1DDFA).withValues(alpha: 0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               child: const Text("Change", style: TextStyle(color: Color(0xFF35408B), fontWeight: FontWeight.bold)),
             ),
         ],

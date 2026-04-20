@@ -1,7 +1,8 @@
-import 'dart:ui'; 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/constants.dart';
 import 'seller_profile_page.dart'; 
 import 'edit_item_page.dart';
 import 'chat_room_page.dart'; 
@@ -18,7 +19,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   final PageController _pageController = PageController();
   int _currentImageIndex = 0;
   
-  late Future<Map<String, dynamic>> _sellerProfileFuture;
+  late Future<Map<String, dynamic>?> _sellerProfileFuture;
 
   @override
   void initState() {
@@ -33,12 +34,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     super.dispose();
   }
 
-  Future<Map<String, dynamic>> _fetchSellerProfile(String sellerId) async {
+  Future<Map<String, dynamic>?> _fetchSellerProfile(String sellerId) async {
+    if (sellerId.isEmpty) return null;
     final response = await Supabase.instance.client
         .from('profiles')
         .select('username, avatar_url')
         .eq('id', sellerId)
-        .single();
+        .maybeSingle();
     return response;
   }
 
@@ -73,7 +75,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Widget _buildUI(Map<String, dynamic> data) {
     final String title = data['name'] ?? 'ไม่มีชื่อสินค้า';
-    final String price = data['price']?.toString() ?? '0';
+    final String formattedPrice = formatPrice(data['price']);
     final String description = data['description'] ?? 'ไม่มีรายละเอียดเพิ่มเติม';
     final String category = data['category'] ?? 'ทั่วไป';
     final String sellerId = data['seller_id'] ?? '';
@@ -113,7 +115,40 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       controller: _pageController,
                       itemCount: imageUrls.length,
                       onPageChanged: (index) => setState(() => _currentImageIndex = index),
-                      itemBuilder: (context, index) => Image.network(imageUrls[index], fit: BoxFit.cover),
+                      itemBuilder: (context, index) => GestureDetector(
+                        onTap: () => _showImageViewer(context, imageUrls, index),
+                        child: Image.network(
+                          imageUrls[index],
+                          fit: BoxFit.cover,
+                          frameBuilder: (ctx, child, frame, wasSynchronouslyLoaded) {
+                            if (wasSynchronouslyLoaded) return child;
+                            return AnimatedOpacity(
+                              opacity: frame == null ? 0 : 1,
+                              duration: const Duration(milliseconds: 400),
+                              curve: Curves.easeOut,
+                              child: child,
+                            );
+                          },
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xFFF5F7FA),
+                            child: const Center(child: Icon(Icons.broken_image_outlined, size: 48, color: Colors.grey)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // ── Gradient overlay ──
+                  Positioned(
+                    bottom: 0, left: 0, right: 0,
+                    height: 80,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [Colors.black.withValues(alpha: 0.25), Colors.transparent],
+                        ),
+                      ),
                     ),
                   ),
                   if (imageUrls.length > 1)
@@ -128,7 +163,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             height: 4,
                             width: _currentImageIndex == index ? 24 : 8,
                             decoration: BoxDecoration(
-                              color: _currentImageIndex == index ? const Color(0xFF35408B) : Colors.white.withOpacity(0.6),
+                              color: _currentImageIndex == index ? const Color(0xFF35408B) : Colors.white.withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           );
@@ -152,7 +187,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   const SizedBox(height: 12),
                   Text(title, style: GoogleFonts.manrope(fontSize: 26, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D))),
                   const SizedBox(height: 16),
-                  Text("$price THB", style: GoogleFonts.manrope(fontSize: 28, fontWeight: FontWeight.w900, color: const Color(0xFF35408B))),
+                  // ── Price badge ──
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF35408B).withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text("฿$formattedPrice", style: GoogleFonts.manrope(fontSize: 28, fontWeight: FontWeight.w900, color: const Color(0xFF35408B))),
+                  ),
                   const SizedBox(height: 32),
 
                   Text("รายละเอียด", style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -177,15 +220,46 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Widget _buildCircleBtn(IconData icon, VoidCallback onTap) {
     return Container(
       margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), shape: BoxShape.circle),
-      child: IconButton(icon: Icon(icon, color: Colors.black, size: 18), onPressed: onTap),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), shape: BoxShape.circle),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.black, size: 18),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+      ),
+    );
+  }
+
+  // ── Full-screen image viewer with zoom ──
+  void _showImageViewer(BuildContext context, List<dynamic> urls, int initialIndex) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (_, __, ___) => _ImageViewerPage(urls: urls, initialIndex: initialIndex),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
     );
   }
 
   Widget _buildSellerCard(String sellerId) {
-    return FutureBuilder<Map<String, dynamic>>(
+    return FutureBuilder<Map<String, dynamic>?>(
       future: _sellerProfileFuture, 
       builder: (context, snapshot) {
+        if (snapshot.hasError || (!snapshot.hasData && snapshot.connectionState == ConnectionState.done)) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E9EC))),
+            child: Row(children: [
+              CircleAvatar(radius: 24, backgroundColor: const Color(0xFFF5F7FA), child: const Icon(Icons.person, color: Colors.grey)),
+              const SizedBox(width: 12),
+              Expanded(child: Text('ไม่พบข้อมูลผู้ขาย', style: GoogleFonts.manrope(color: Colors.grey))),
+            ]),
+          );
+        }
         if (!snapshot.hasData) return const SizedBox(height: 80);
         final sellerName = snapshot.data?['username'] ?? 'ไม่ทราบชื่อ';
         final sellerAvatar = snapshot.data?['avatar_url'] ?? '';
@@ -238,8 +312,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         MaterialPageRoute(
                           builder: (context) => ChatRoomPage(
                             product: data,
-                            peerName: sellerProfile['username'],    // 💡 ส่งชื่อผู้ขายไป
-                            peerAvatar: sellerProfile['avatar_url'], // 💡 ส่งรูปผู้ขายไป
+                            peerName: sellerProfile?['username'],    // ส่งชื่อผู้ขายไป
+                            peerAvatar: sellerProfile?['avatar_url'], // ส่งรูปผู้ขายไป
                           ),
                         ),
                       );
@@ -253,13 +327,92 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("ฟีเจอร์นี้กำลังจะมาเร็วๆ นี้", style: GoogleFonts.manrope()),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF35408B), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: Text("ซื้อเลย", style: GoogleFonts.manrope(fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
             ],
           ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Full-screen image viewer with pinch-to-zoom
+// ─────────────────────────────────────────────
+class _ImageViewerPage extends StatefulWidget {
+  final List<dynamic> urls;
+  final int initialIndex;
+  const _ImageViewerPage({required this.urls, required this.initialIndex});
+
+  @override
+  State<_ImageViewerPage> createState() => _ImageViewerPageState();
+}
+
+class _ImageViewerPageState extends State<_ImageViewerPage> {
+  late final PageController _controller;
+  late int _currentPage;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(initialPage: widget.initialIndex);
+    _currentPage = widget.initialIndex;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          '${_currentPage + 1} / ${widget.urls.length}',
+          style: GoogleFonts.manrope(color: Colors.white, fontSize: 14),
+        ),
+        centerTitle: true,
+      ),
+      body: PageView.builder(
+        controller: _controller,
+        itemCount: widget.urls.length,
+        onPageChanged: (i) => setState(() => _currentPage = i),
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4.0,
+            child: Center(
+              child: Image.network(
+                widget.urls[index],
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.broken_image_outlined,
+                  size: 64,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

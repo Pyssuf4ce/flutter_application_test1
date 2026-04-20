@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/constants.dart';
 import 'product_detail_page.dart';
 import 'chat_room_page.dart'; // 💡 1. Import หน้า ChatRoomPage เข้ามา
 
@@ -41,6 +42,19 @@ class SellerProfilePage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator(color: Color(0xFF4D58A5)));
           }
 
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                  const SizedBox(height: 12),
+                  Text('ไม่สามารถโหลดข้อมูลได้', style: GoogleFonts.manrope(color: Colors.grey[600])),
+                ],
+              ),
+            );
+          }
+
           final profile = snapshot.data!;
           final String username = profile['username'] ?? 'User';
           final String avatarUrl = profile['avatar_url'] ?? '';
@@ -75,7 +89,7 @@ class SellerProfilePage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD1DDFA).withOpacity(0.5),
+                            color: const Color(0xFFD1DDFA).withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -194,7 +208,15 @@ class SellerProfilePage extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.network(item['image_url'] ?? '', fit: BoxFit.cover, width: double.infinity),
+                child: Image.network(
+                  item['image_url'] ?? '', 
+                  fit: BoxFit.cover, 
+                  width: double.infinity,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: const Color(0xFFF5F7FA),
+                    child: const Center(child: Icon(Icons.broken_image_outlined, color: Colors.grey)),
+                  ),
+                ),
               ),
             ),
             Padding(
@@ -204,7 +226,7 @@ class SellerProfilePage extends StatelessWidget {
                 children: [
                   Text(item['name'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
-                  Text("${item['price']} THB", style: const TextStyle(color: Color(0xFF35408B), fontWeight: FontWeight.w800, fontSize: 14)),
+                  Text("${formatPrice(item['price'])} THB", style: const TextStyle(color: Color(0xFF35408B), fontWeight: FontWeight.w800, fontSize: 14)),
                 ],
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart'; 
+import '../core/constants.dart';
 
 class EditItemPage extends StatefulWidget {
   final Map<String, dynamic> item; 
@@ -18,16 +19,8 @@ class _EditItemPageState extends State<EditItemPage> {
   late TextEditingController _priceController;
   late TextEditingController _descController;
   
-  String _selectedCategory = 'แฟชั่น';
-  final List<String> _categories = [
-    'แฟชั่น', 
-    'ไอที/อุปกรณ์', 
-    'ความงาม', 
-    'งานบริการ', 
-    'อาหาร', 
-    'ของสะสม', 
-    'ทั่วไป'
-  ];
+  String _selectedCategory = kProductCategories.first;
+  final List<String> _categories = kProductCategories;
 
   List<String> _initialImages = []; 
   List<String> _existingImages = []; 
@@ -300,8 +293,8 @@ class _EditItemPageState extends State<EditItemPage> {
                     icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                     label: Text("ลบรายการสินค้านี้", style: GoogleFonts.manrope(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.redAccent.withOpacity(0.2))),
-                      backgroundColor: Colors.redAccent.withOpacity(0.05),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.2))),
+                      backgroundColor: Colors.redAccent.withValues(alpha: 0.05),
                     ),
                   ),
                 ),

@@ -107,8 +107,8 @@ class ProfilePageState extends State<ProfilePage> {
                                 width: 80, height: 80,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.2),
-                                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
                                   image: _avatarUrl.isNotEmpty ? DecorationImage(image: NetworkImage(_avatarUrl), fit: BoxFit.cover) : null,
                                 ),
                                 child: _avatarUrl.isEmpty ? const Icon(Icons.person, size: 40, color: Colors.white) : null,
@@ -127,7 +127,7 @@ class ProfilePageState extends State<ProfilePage> {
                               IconButton(
                                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfilePage())).then((_) => _fetchProfileData()),
                                 icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                                style: IconButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.1)),
+                                style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.1)),
                               )
                             ],
                           ),
@@ -139,7 +139,7 @@ class ProfilePageState extends State<ProfilePage> {
                               icon: const Icon(Icons.storefront, color: Colors.white, size: 18),
                               label: const Text("Preview Public Storefront", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                                side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
@@ -159,7 +159,7 @@ class ProfilePageState extends State<ProfilePage> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(24),
-                            boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 10))],
+                            boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 10))],
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -168,7 +168,7 @@ class ProfilePageState extends State<ProfilePage> {
                               _buildStatItem("Active Assets", _activeListingsCount.toString(), Icons.inventory_2_rounded, () {
                                 Navigator.push(context, MaterialPageRoute(builder: (context) => const MyListingsPage())).then((_) => _fetchProfileData());
                               }),
-                              Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.2)),
+                              Container(height: 40, width: 1, color: Colors.grey.withValues(alpha: 0.2)),
                               _buildStatItem("Vault Rating", "100%", Icons.star_rounded, () {}),
                             ],
                           ),
@@ -215,7 +215,7 @@ class ProfilePageState extends State<ProfilePage> {
                               onPressed: _logout,
                               style: TextButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
-                                backgroundColor: const Color(0xFFba1a1a).withOpacity(0.05),
+                                backgroundColor: const Color(0xFFba1a1a).withValues(alpha: 0.05),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               ),
                               icon: const Icon(Icons.logout, color: Color(0xFFba1a1a)),
@@ -260,8 +260,8 @@ class ProfilePageState extends State<ProfilePage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.withOpacity(0.08)),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.08)),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Row(
             children: [

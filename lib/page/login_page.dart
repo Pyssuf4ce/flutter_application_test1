@@ -215,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withOpacity(0.04), blurRadius: 40, offset: const Offset(0, 20))],
+        boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withValues(alpha: 0.04), blurRadius: 40, offset: const Offset(0, 20))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +229,7 @@ class _LoginPageState extends State<LoginPage> {
             style: const TextStyle(fontWeight: FontWeight.bold),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: const Color(0xFF767682).withOpacity(0.5), fontWeight: FontWeight.normal),
+              hintStyle: TextStyle(color: const Color(0xFF767682).withValues(alpha: 0.5), fontWeight: FontWeight.normal),
               filled: true,
               fillColor: const Color(0xFFE2E9EC),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),

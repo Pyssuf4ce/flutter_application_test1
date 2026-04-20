@@ -188,7 +188,7 @@ class _SecurityPageState extends State<SecurityPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
       child: Row(
         children: [
           Expanded(
@@ -201,7 +201,7 @@ class _SecurityPageState extends State<SecurityPage> {
           if (onEdit != null)
             TextButton(
               onPressed: onEdit,
-              style: TextButton.styleFrom(backgroundColor: const Color(0xFFD1DDFA).withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              style: TextButton.styleFrom(backgroundColor: const Color(0xFFD1DDFA).withValues(alpha: 0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               child: const Text("Change", style: TextStyle(color: Color(0xFF35408B), fontWeight: FontWeight.bold)),
             ),
         ],
@@ -212,7 +212,7 @@ class _SecurityPageState extends State<SecurityPage> {
   Widget _buildDeleteTile() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.red.withOpacity(0.2))),
+      decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.red.withValues(alpha: 0.2))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -127,7 +127,7 @@ class _SetupProfilePageState extends State<SetupProfilePage> {
 
               Container(
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withOpacity(0.04), blurRadius: 40, offset: const Offset(0, 20))]),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withValues(alpha: 0.04), blurRadius: 40, offset: const Offset(0, 20))]),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

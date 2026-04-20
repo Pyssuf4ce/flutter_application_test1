@@ -1,24 +1,24 @@
-import 'dart:ui'; 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:intl/date_symbol_data_local.dart'; // เพิ่ม import นี้
+import 'package:intl/date_symbol_data_local.dart';
 
 // 💡 Import ส่วนประกอบสำคัญ
 import 'page/login_page.dart';
 import 'page/main_screen.dart'; 
-import 'models/message_model.dart'; // 💡 ตรวจสอบว่ารัน build_runner แล้วนะครับ
+import 'models/message_model.dart';
 
 Future<void> main() async {
   // 1. เตรียมความพร้อมของ Flutter Engine
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('th', null); // ← เพิ่มบรรทัดนี้ก่อน runApp
+  await initializeDateFormatting('th', null);
+
   // 2. เริ่มการทำงานของ Hive (ระบบ Local Database สำหรับเล่น Offline)
   await Hive.initFlutter();
   
   // 3. จดทะเบียน Adapter เพื่อให้ Hive รู้จักโครงสร้างข้อมูล LocalMessage
-  // หมายเหตุ: บรรทัดนี้จะหายแดงเมื่อคุณรัน dart run build_runner build เสร็จสิ้น
   Hive.registerAdapter(LocalMessageAdapter());
   
   // 4. เปิดกล่องสำหรับเก็บข้อความแชทไว้ในเครื่อง
@@ -29,6 +29,17 @@ Future<void> main() async {
     url: 'https://rcgweqiqhycnobppmass.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZ3dlcWlxaHljbm9icHBtYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MDI5NDQsImV4cCI6MjA5MTI3ODk0NH0.qGeIgwL7JV8qraE2LCsw46zZnIK7G6x99FNVZABg1Es',
   );
+
+  // 6. 🔤 Preload ฟอนต์ก่อน — กันปัญหาตัวอักษรเป็นสี่เหลี่ยม (tofu) ตอนเปิดแอพ
+  await GoogleFonts.pendingFonts([
+    GoogleFonts.manrope(),
+    GoogleFonts.manrope(fontWeight: FontWeight.w600),
+    GoogleFonts.manrope(fontWeight: FontWeight.w700),
+    GoogleFonts.manrope(fontWeight: FontWeight.w800),
+    GoogleFonts.manrope(fontWeight: FontWeight.w900),
+    GoogleFonts.inter(),
+    GoogleFonts.inter(fontWeight: FontWeight.w700),
+  ]);
 
   runApp(const VaultApp());
 }
@@ -59,14 +70,16 @@ class VaultApp extends StatelessWidget {
           primary: const Color(0xFF4D58A5),
           surface: const Color(0xFFF8F9FA),
         ),
-        // ใช้ฟอนต์ Inter ตามที่คุณชอบเพื่อให้แอปดูอินเตอร์สมชื่อ
+        // ✅ ใช้ Inter เป็นฟอนต์หลัก + fallback เป็น Noto Sans Thai สำหรับภาษาไทย
         textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
+        fontFamily: GoogleFonts.inter().fontFamily,
+        fontFamilyFallback: const ['Noto Sans Thai', 'Noto Sans', 'sans-serif'],
       ),
 
       // 💡 ระบบ Auto-Login: ถ้าเคย Login ไว้แล้ว ให้ข้ามหน้า Login ไปที่หน้าหลักทันที
       home: Supabase.instance.client.auth.currentUser == null 
           ? const LoginPage() 
-          : MainScreen(), // ลบ const ออกเพื่อให้ทำงานกับ GlobalKey ใน MainScreen ได้
+          : MainScreen(),
     );
   }
 }

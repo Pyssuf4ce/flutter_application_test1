@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/constants.dart';
 import 'edit_item_page.dart'; 
 
 class MyListingsPage extends StatefulWidget {
@@ -143,7 +144,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.withOpacity(0.5)),
+                            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.withValues(alpha: 0.5)),
                             const SizedBox(height: 16),
                             Text("คุณยังไม่มีรายการสินค้าในขณะนี้", style: GoogleFonts.manrope(color: Colors.grey, fontSize: 16)),
                           ],
@@ -159,7 +160,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
                       itemBuilder: (context, index) {
                         final item = items[index];
                         final title = item['name'] ?? 'Untitled';
-                        final price = item['price']?.toString() ?? '0';
                         final imageUrl = item['image_url'] ?? '';
                         final category = item['category'] ?? 'General';
 
@@ -170,7 +170,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF4D58A5).withOpacity(0.04), 
+                                color: const Color(0xFF4D58A5).withValues(alpha: 0.04), 
                                 blurRadius: 20, 
                                 offset: const Offset(0, 10)
                               )
@@ -199,7 +199,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     const SizedBox(height: 4),
                                     Text(title, style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     const SizedBox(height: 4),
-                                    Text("$price THB", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5))),
+                                    Text("${formatPrice(item['price'])} THB", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5))),
                                   ],
                                 ),
                               ),
@@ -230,7 +230,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 ),
                 if (_isLoading)
                   Container(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     child: const Center(child: CircularProgressIndicator(color: Color(0xFF4D58A5))),
                   ),
               ],
