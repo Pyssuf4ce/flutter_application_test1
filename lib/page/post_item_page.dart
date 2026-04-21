@@ -1,11 +1,11 @@
-import 'dart:typed_data'; 
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/services.dart'; 
 import '../core/constants.dart';
-import 'product_detail_page.dart'; 
+import '../services/product_service.dart';
+import 'product_detail_page.dart';
 
 class PostItemPage extends StatefulWidget {
   const PostItemPage({super.key});
@@ -70,70 +70,38 @@ class PostItemPageState extends State<PostItemPage> {
 
   Future<void> _postListing() async {
     if (_nameController.text.isEmpty || _priceController.text.isEmpty) {
-      _showSnackBar('ใส่ชื่อสินค้ากับราคาก่อนนะคุณ Kong', Colors.orange);
+      _showSnackBar('ใส่ชื่อสินค้ากับราคาก่อนนะ', Colors.orange);
       return;
     }
-    
     if (_imagesBytes.isEmpty) {
       _showSnackBar('เอารูปมาโชว์หน่อย อย่างน้อย 1 รูปนะ', Colors.orange);
       return;
     }
 
     setState(() => _isLoading = true);
-
     try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-
-      if (user == null) throw Exception('เข้าสู่ระบบก่อนนะ');
-
-      // 1. ระบบอัปโหลดรูปแบบใหม่ ทำงานขนานพร้อมกัน
-      List<Future<String>> uploadTasks = [];
-
-      for (int i = 0; i < _pickedFiles.length; i++) {
-        final fileExtension = _pickedFiles[i].name.split('.').last;
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$i.$fileExtension';
-        final filePath = '${user.id}/$fileName'; 
-
-        uploadTasks.add(() async {
-          await supabase.storage.from('product_images').uploadBinary(
-            filePath, 
-            _imagesBytes[i],
-            fileOptions: FileOptions(contentType: 'image/$fileExtension'),
-          );
-          return supabase.storage.from('product_images').getPublicUrl(filePath);
-        }());
-      }
-
-      List<String> uploadedImageUrls = await Future.wait(uploadTasks);
-
-      // 2. แก้บั๊กราคา: ลบลูกน้ำออกก่อนบันทึก
       final rawPrice = _priceController.text.replaceAll(',', '').trim();
       final double finalPrice = double.tryParse(rawPrice) ?? 0.0;
+      final fileNames = _pickedFiles.map((f) => f.name).toList();
 
-      // 3. บันทึกข้อมูลและดึงข้อมูลกลับมาเพื่อนำทาง
-      final newProductData = await supabase.from('products').insert({
-        'seller_id': user.id,
-        'name': _nameController.text.trim(),
-        'price': finalPrice,
-        'description': _descController.text.trim(),
-        'category': _selectedCategory,
-        'image_url': uploadedImageUrls.isNotEmpty ? uploadedImageUrls.first : '', 
-        'image_urls': uploadedImageUrls, 
-        'status': 'available',
-        'created_at': DateTime.now().toIso8601String(),
-      }).select().single();
+      // ✅ ใช้ ProductService แทนการเรียก Supabase ตรงๆ
+      final product = await ProductService.instance.createProduct(
+        name: _nameController.text.trim(),
+        price: finalPrice,
+        description: _descController.text.trim(),
+        category: _selectedCategory,
+        imageBytesList: List<Uint8List>.from(_imagesBytes),
+        fileNames: fileNames,
+      );
 
       if (mounted) {
-        HapticFeedback.lightImpact(); 
+        HapticFeedback.lightImpact();
         _showSnackBar('เย้! ลงขายเรียบร้อยแล้ว', Colors.green);
         _clearFields();
-
-        // นำทางไปหน้า ProductDetailPage ทันที
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductDetailPage(productData: newProductData),
+            builder: (_) => ProductDetailPage(productData: product.toRawMap()),
           ),
         );
       }

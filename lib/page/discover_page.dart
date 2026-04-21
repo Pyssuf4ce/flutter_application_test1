@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import '../core/constants.dart';
+import '../models/product_model.dart';
+import '../services/product_service.dart';
 import 'product_detail_page.dart';
 
 class DiscoverPage extends StatefulWidget {
@@ -177,11 +178,8 @@ class DiscoverPageState extends State<DiscoverPage> {
                 await Future.delayed(const Duration(seconds: 1));
               },
               color: const Color(0xFF35408B),
-              child: StreamBuilder<List<Map<String, dynamic>>>(
-                stream: Supabase.instance.client
-                    .from('products')
-                    .stream(primaryKey: ['id'])
-                    .order('created_at'),
+              child: StreamBuilder<List<Product>>(
+                stream: ProductService.instance.streamProducts(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                     return _buildShimmerGrid();
@@ -193,11 +191,11 @@ class DiscoverPageState extends State<DiscoverPage> {
 
                   final allProducts = snapshot.data ?? [];
                   
-                  final products = allProducts.where((item) {
-                    if (item['status'] != 'available') return false;
+                  final products = allProducts.where((product) {
+                    if (!product.isAvailable) return false;
 
-                    final name = (item['name'] ?? '').toString().toLowerCase();
-                    final cat = item['category'] ?? 'ทั่วไป';
+                    final name = product.name.toLowerCase();
+                    final cat = product.category;
                     
                     final matchesSearch = name.contains(_searchQuery.toLowerCase());
                     final matchesCategory = _selectedCategory == 'ทั้งหมด' || cat == _selectedCategory;
@@ -302,11 +300,11 @@ class DiscoverPageState extends State<DiscoverPage> {
     );
   }
 
-  Widget _buildGridCard(BuildContext context, Map<String, dynamic> item) {
-    final String title = item['name'] ?? 'ไม่มีชื่อสินค้า';
-    final String category = item['category'] ?? 'ทั่วไป';
-    final String formattedPrice = formatPrice(item['price']);
-    final String imageUrl = item['image_url'] ?? '';
+  Widget _buildGridCard(BuildContext context, Product product) {
+    final String title = product.name;
+    final String category = product.category;
+    final String formattedPrice = formatPrice(product.price);
+    final String imageUrl = product.imageUrl;
 
     return _PressableCard(
       onTap: () {
@@ -314,7 +312,7 @@ class DiscoverPageState extends State<DiscoverPage> {
         Navigator.push(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => ProductDetailPage(productData: item),
+            pageBuilder: (_, __, ___) => ProductDetailPage(productData: product.toRawMap()),
             transitionsBuilder: (_, animation, __, child) {
               return FadeTransition(
                 opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -336,7 +334,7 @@ class DiscoverPageState extends State<DiscoverPage> {
           children: [
             Expanded(
               child: Hero(
-                tag: 'product_image_${item['id']}',
+                tag: 'product_image_${product.id}',
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                   child: Container(

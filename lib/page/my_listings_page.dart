@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants.dart';
-import 'edit_item_page.dart'; 
+import '../models/product_model.dart';
+import '../services/product_service.dart';
+import 'edit_item_page.dart';
 
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
@@ -15,41 +17,14 @@ class _MyListingsPageState extends State<MyListingsPage> {
   final _supabase = Supabase.instance.client;
   bool _isLoading = false;
 
-  /// 💡 ฟังก์ชันล้างรูปภาพใน Storage (ทำงานแบบ Fire and Forget)
-  /// จะถูกเรียกหลังจากข้อมูลใน Database ถูกลบสำเร็จแล้ว
-  Future<void> _cleanupStorageImages(List<dynamic> urls, String? singleUrl) async {
-    try {
-      List<String> pathsToDelete = [];
-      
-      // รวม URL ทั้งหมดที่เกี่ยวข้องกับสินค้านี้
-      final allUrls = {...urls, if (singleUrl != null) singleUrl}.toList();
-
-      for (var url in allUrls) {
-        final uri = Uri.parse(url.toString());
-        final pathSegments = uri.pathSegments;
-        final bucketIndex = pathSegments.indexOf('product_images');
-        if (bucketIndex != -1 && bucketIndex < pathSegments.length - 1) {
-          pathsToDelete.add(pathSegments.sublist(bucketIndex + 1).join('/'));
-        }
-      }
-
-      if (pathsToDelete.isNotEmpty) {
-        await _supabase.storage.from('product_images').remove(pathsToDelete);
-      }
-    } catch (e) {
-      debugPrint("Storage cleanup warning: $e");
-    }
-  }
-
-  /// 💡 ฟังก์ชันลบสินค้าโดยใช้ RPC (ระดับมืออาชีพ)
-  /// การลบจะเกิดขึ้นที่ฝั่ง Database ทั้งหมดเพื่อความปลอดภัย
-  Future<void> _deleteItem(Map<String, dynamic> item) async {
+  /// 💡 ฟังก์ชันลบสินค้าแบบใหม่ ใช้ ProductService
+  Future<void> _deleteItem(Product item) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text("ลบรายการนี้?", style: GoogleFonts.manrope(fontWeight: FontWeight.bold, color: Colors.red)),
-        content: Text("ยืนยันการลบสินค้า ข้อมูลจะหายไปทันทีและไม่สามารถกู้คืนได้นะคุณ Kong", style: GoogleFonts.manrope()),
+        content: Text("ยืนยันการลบสินค้า ข้อมูลจะหายไปทันทีและไม่สามารถกู้คืนได้นะ", style: GoogleFonts.manrope()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false), 
@@ -70,24 +45,12 @@ class _MyListingsPageState extends State<MyListingsPage> {
     if (confirm == true) {
       setState(() => _isLoading = true);
       try {
-        final String itemId = item['id'].toString();
-        final List<dynamic> imageUrls = item['image_urls'] ?? [];
-        final String? singleUrl = item['image_url'];
-
-        // 🚀 STEP 1: เรียกใช้ RPC Function ที่เราเขียนไว้ใน Supabase
-        // วิธีนี้จะเช็ก Ownership และลบข้อมูลแบบ Atomic ในคำสั่งเดียว
-        await _supabase.rpc(
-          'delete_product_completely', 
-          params: {'p_id': itemId}
-        );
-
-        // 🚀 STEP 2: เมื่อ DB ลบสำเร็จแล้ว จึงตามไปลบไฟล์ใน Storage
-        _cleanupStorageImages(imageUrls, singleUrl);
+        await ProductService.instance.deleteProduct(item.id, item.imageUrls);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('ลบรายการเรียบร้อยแล้ว (Professional Mode)'), 
+              content: Text('ลบรายการเรียบร้อยแล้ว'), 
               backgroundColor: Colors.green, 
               behavior: SnackBarBehavior.floating
             ),
@@ -128,12 +91,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
           ? const Center(child: Text("กรุณาเข้าสู่ระบบก่อนนะคุณ Kong"))
           : Stack(
               children: [
-                StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: _supabase
-                      .from('products')
-                      .stream(primaryKey: ['id'])
-                      .eq('seller_id', user.id)
-                      .order('created_at'),
+                StreamBuilder<List<Product>>(
+                  stream: ProductService.instance.streamProductsBySeller(user.id),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator(color: Color(0xFF4D58A5)));
@@ -159,9 +118,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                       itemCount: items.length,
                       itemBuilder: (context, index) {
                         final item = items[index];
-                        final title = item['name'] ?? 'Untitled';
-                        final imageUrl = item['image_url'] ?? '';
-                        final category = item['category'] ?? 'General';
+                        final title = item.name;
+                        final imageUrl = item.imageUrl;
+                        final category = item.category;
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16),
@@ -199,7 +158,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     const SizedBox(height: 4),
                                     Text(title, style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     const SizedBox(height: 4),
-                                    Text("${formatPrice(item['price'])} THB", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5))),
+                                    Text("${formatPrice(item.price)} THB", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5))),
                                   ],
                                 ),
                               ),
@@ -210,7 +169,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     onPressed: () {
                                       Navigator.push(
                                         context,
-                                        MaterialPageRoute(builder: (context) => EditItemPage(item: item)),
+                                        MaterialPageRoute(builder: (context) => EditItemPage(item: item.toRawMap())),
                                       );
                                     },
                                   ),

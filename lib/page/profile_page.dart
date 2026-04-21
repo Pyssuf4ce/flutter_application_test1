@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/product_service.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart'; 
 import 'my_listings_page.dart';
 import 'security_page.dart';
-import 'seller_profile_page.dart'; 
+import 'seller_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -53,14 +54,14 @@ class ProfilePageState extends State<ProfilePage> {
         // 1. ดึงข้อมูลโปรไฟล์
         final profileData = await supabase.from('profiles').select('username, avatar_url').eq('id', user.id).single();
         
-        // 2. ดึงจำนวนสินค้าที่เราลงขาย (Active Assets) 💡
-        final productsData = await supabase.from('products').select('id').eq('seller_id', user.id);
+        // 2. ดึงจำนวนสินค้าที่เราลงขาย (Active Assets) ผ่าน ProductService
+        final products = await ProductService.instance.getProductsBySeller(user.id);
 
         if (mounted) {
           setState(() {
             _username = profileData['username'] ?? 'Unknown User';
             _avatarUrl = profileData['avatar_url'] ?? '';
-            _activeListingsCount = (productsData as List).length; // นับจำนวน
+            _activeListingsCount = products.length; // นับจำนวน
             _isLoading = false;
           });
         }

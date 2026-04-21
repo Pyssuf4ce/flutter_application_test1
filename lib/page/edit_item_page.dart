@@ -1,10 +1,10 @@
-import 'dart:typed_data'; 
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/services.dart'; 
 import '../core/constants.dart';
+import '../services/product_service.dart';
 
 class EditItemPage extends StatefulWidget {
   final Map<String, dynamic> item; 
@@ -79,7 +79,7 @@ class _EditItemPageState extends State<EditItemPage> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text("ลบรายการนี้?", style: GoogleFonts.manrope(fontWeight: FontWeight.bold, color: Colors.red)),
-        content: Text("ยืนยันการลบสินค้า ข้อมูลจะหายไปถาวรนะคุณ Kong", style: GoogleFonts.manrope()),
+        content: Text("ยืนยันการลบสินค้า ข้อมูลจะหายไปถาวรนะ", style: GoogleFonts.manrope()),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text("ยกเลิก", style: GoogleFonts.manrope(color: Colors.grey))),
           ElevatedButton(
@@ -94,25 +94,18 @@ class _EditItemPageState extends State<EditItemPage> {
     if (confirm == true) {
       setState(() => _isLoading = true);
       try {
-        final supabase = Supabase.instance.client;
-
-        // 🚀 STEP 1: ลบข้อมูลจาก Database ผ่าน RPC (ต้องรัน SQL Function ใน Supabase ก่อนนะ!)
-        await supabase.rpc(
-          'delete_product_completely', 
-          params: {'p_id': widget.item['id']}
+        // ✅ ใช้ ProductService ลบสินค้าพร้อมรูปใน Storage
+        await ProductService.instance.deleteProduct(
+          widget.item['id'] as String,
+          _initialImages,
         );
-
-        // 🚀 STEP 2: เมื่อลบใน DB สำเร็จค่อยตามไปลบรูปใน Storage (Fire and Forget)
-        _cleanupAllImages(_initialImages);
 
         if (mounted) {
           HapticFeedback.heavyImpact();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ลบรายการเรียบร้อยแล้ว'), behavior: SnackBarBehavior.floating)
+            const SnackBar(content: Text('ลบรายการเรียบร้อยแล้ว'), behavior: SnackBarBehavior.floating),
           );
-          
-          // ปิดทั้งหน้า Edit และหน้า Detail เพื่อกลับไปหน้า My Listings
-          Navigator.of(context)..pop()..pop(); 
+          Navigator.of(context)..pop()..pop();
         }
       } catch (e) {
         _showSnackBar('เกิดข้อผิดพลาด: ${e.toString()}', Colors.red);
@@ -122,83 +115,33 @@ class _EditItemPageState extends State<EditItemPage> {
     }
   }
 
-  // ฟังก์ชันช่วยล้างรูปภาพทั้งหมดใน Storage
-  Future<void> _cleanupAllImages(List<String> urls) async {
-    if (urls.isEmpty) return;
-    try {
-      final supabase = Supabase.instance.client;
-      List<String> pathsToDelete = [];
-      for (var url in urls) {
-        final uri = Uri.parse(url);
-        final pathSegments = uri.pathSegments;
-        final bucketIndex = pathSegments.indexOf('product_images');
-        if (bucketIndex != -1) {
-          pathsToDelete.add(pathSegments.sublist(bucketIndex + 1).join('/'));
-        }
-      }
-      if (pathsToDelete.isNotEmpty) {
-        await supabase.storage.from('product_images').remove(pathsToDelete);
-      }
-    } catch (e) {
-      debugPrint("Cleanup warning: $e");
-    }
-  }
-
   Future<void> _updateListing() async {
     if (_nameController.text.isEmpty || _priceController.text.isEmpty) {
-      _showSnackBar('ใส่ชื่อและราคาก่อนนะคุณ Kong', Colors.orange);
+      _showSnackBar('ใส่ชื่อและราคาก่อนนะ', Colors.orange);
       return;
     }
-
     setState(() => _isLoading = true);
-
     try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-      if (user == null) throw Exception('ไม่พบผู้ใช้');
+      // ลบรูปที่ถูกลบออกไปจาก Storage
+      final removed = _initialImages.where((u) => !_existingImages.contains(u)).toList();
+      if (removed.isNotEmpty) await ProductService.instance.deleteImageUrls(removed);
 
-      // 1. ลบรูปที่ผู้ใช้กดกากบาททิ้งออกจาก Storage
-      final imagesToRemove = _initialImages.where((url) => !_existingImages.contains(url)).toList();
-      if (imagesToRemove.isNotEmpty) {
-        List<String> paths = [];
-        for (var url in imagesToRemove) {
-          final uri = Uri.parse(url);
-          final bucketIndex = uri.pathSegments.indexOf('product_images');
-          if (bucketIndex != -1) paths.add(uri.pathSegments.sublist(bucketIndex + 1).join('/'));
-        }
-        await supabase.storage.from('product_images').remove(paths);
-      }
-
-      // 2. อัปโหลดรูปใหม่พร้อมกัน (Parallel)
-      List<String> finalUrls = List.from(_existingImages);
-      if (_newPickedFiles.isNotEmpty) {
-        List<Future<String>> uploadTasks = [];
-        for (int i = 0; i < _newPickedFiles.length; i++) {
-          final name = '${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
-          final path = '${user.id}/$name';
-          uploadTasks.add(() async {
-            await supabase.storage.from('product_images').uploadBinary(path, _newImagesBytes[i]);
-            return supabase.storage.from('product_images').getPublicUrl(path);
-          }());
-        }
-        final uploadedResults = await Future.wait(uploadTasks);
-        finalUrls.addAll(uploadedResults);
-      }
-
-      // 3. บันทึกข้อมูล
-      await supabase.from('products').update({
-        'name': _nameController.text.trim(),
-        'price': double.tryParse(_priceController.text.replaceAll(',', '')) ?? 0.0,
-        'description': _descController.text.trim(),
-        'category': _selectedCategory,
-        'image_url': finalUrls.isNotEmpty ? finalUrls.first : '',
-        'image_urls': finalUrls,
-      }).eq('id', widget.item['id']);
+      // ✅ ใช้ ProductService อัปเดตสินค้า
+      await ProductService.instance.updateProduct(
+        id: widget.item['id'] as String,
+        name: _nameController.text.trim(),
+        price: double.tryParse(_priceController.text.replaceAll(',', '')) ?? 0.0,
+        description: _descController.text.trim(),
+        category: _selectedCategory,
+        existingImageUrls: _existingImages,
+        newImageBytesList: List<Uint8List>.from(_newImagesBytes),
+        newFileNames: _newPickedFiles.map((f) => f.name).toList(),
+      );
 
       if (mounted) {
         HapticFeedback.lightImpact();
         _showSnackBar('อัปเดตข้อมูลสำเร็จ!', Colors.green);
-        Navigator.pop(context, true); 
+        Navigator.pop(context, true);
       }
     } catch (e) {
       _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red);
