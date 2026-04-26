@@ -76,7 +76,7 @@
 ---
 
 ## 🚀 เริ่มต้นใช้งาน
-1. `git clone https://github.com/your-username/vault-marketplace.git`
+1. `git clone https://github.com/Pyssuf4ce/flutter_application_test1.git`
 2. `flutter pub get`
 3. ตั้งค่า Supabase ในไฟล์ `lib/main.dart`
 4. `flutter run`
