@@ -72,7 +72,7 @@ class DiscoverPageState extends State<DiscoverPage> {
         elevation: 0,
         title: Text(
           "VAULT",
-          style: GoogleFonts.manrope(
+          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
             fontSize: 20,
             fontWeight: FontWeight.bold,
             letterSpacing: 4,
@@ -91,7 +91,7 @@ class DiscoverPageState extends State<DiscoverPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("ค้นหาสิ่งที่ต้องการ", style: GoogleFonts.manrope(fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D), height: 1.1)),
+                Text("ค้นหาสิ่งที่ต้องการ", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D), height: 1.1)),
                 const SizedBox(height: 20),
                 // ── Search bar with clear button & animation ──
                 AnimatedContainer(
@@ -123,7 +123,7 @@ class DiscoverPageState extends State<DiscoverPage> {
                             )
                           : null,
                       hintText: "ค้นหาสินค้าหรือบริการที่คุณสนใจ...",
-                      hintStyle: GoogleFonts.manrope(fontSize: 14, color: Colors.grey),
+                      hintStyle: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, color: Colors.grey),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
@@ -160,7 +160,7 @@ class DiscoverPageState extends State<DiscoverPage> {
                         ),
                         child: Text(
                           category,
-                          style: GoogleFonts.manrope(color: isSelected ? Colors.white : Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12),
+                          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: isSelected ? Colors.white : Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ),
                     ),
@@ -186,7 +186,7 @@ class DiscoverPageState extends State<DiscoverPage> {
                   }
 
                   if (snapshot.hasError) {
-                    return Center(child: Text("เกิดข้อผิดพลาดในการโหลดข้อมูล", style: GoogleFonts.manrope(color: Colors.red)));
+                    return Center(child: Text("เกิดข้อผิดพลาดในการโหลดข้อมูล", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.red)));
                   }
 
                   final allProducts = snapshot.data ?? [];
@@ -251,9 +251,9 @@ class DiscoverPageState extends State<DiscoverPage> {
                 child: const Icon(Icons.search_off_rounded, size: 40, color: Color(0xFF35408B)),
               ),
               const SizedBox(height: 20),
-              Text("ไม่พบสินค้าที่คุณต้องการ", style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[600])),
+              Text("ไม่พบสินค้าที่คุณต้องการ", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[600])),
               const SizedBox(height: 8),
-              Text("ลองค้นหาด้วยคำอื่น หรือเปลี่ยนหมวดหมู่ดู", style: GoogleFonts.manrope(fontSize: 13, color: Colors.grey[400])),
+              Text("ลองค้นหาด้วยคำอื่น หรือเปลี่ยนหมวดหมู่ดู", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, color: Colors.grey[400])),
             ],
           ),
         ),
@@ -369,9 +369,9 @@ class DiscoverPageState extends State<DiscoverPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(category.toUpperCase(), style: GoogleFonts.manrope(fontSize: 9, fontWeight: FontWeight.w800, color: const Color(0xFF35408B).withValues(alpha: 0.6))),
+                  Text(category.toUpperCase(), style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 9, fontWeight: FontWeight.w800, color: const Color(0xFF35408B).withValues(alpha: 0.6))),
                   const SizedBox(height: 4),
-                  Text(title, style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF191C1D)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(title, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF191C1D)), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
                   // ── Price badge ──
                   Container(
@@ -380,7 +380,7 @@ class DiscoverPageState extends State<DiscoverPage> {
                       color: const Color(0xFF35408B).withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text("฿$formattedPrice", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w900, color: const Color(0xFF35408B))),
+                    child: Text("฿$formattedPrice", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, fontWeight: FontWeight.w900, color: const Color(0xFF35408B))),
                   ),
                 ],
               ),

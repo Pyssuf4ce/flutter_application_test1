@@ -78,7 +78,7 @@ class _SecurityPageState extends State<SecurityPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text("Change $title", style: GoogleFonts.manrope(fontWeight: FontWeight.bold)),
+        title: Text("Change $title", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           obscureText: isPassword,
@@ -148,7 +148,7 @@ class _SecurityPageState extends State<SecurityPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text("SECURITY & ACCOUNT", style: GoogleFonts.manrope(fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 16)),
+        title: Text("SECURITY & ACCOUNT", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 16)),
         centerTitle: true, elevation: 0, backgroundColor: Colors.white,
         leading: IconButton(icon: const Icon(Icons.arrow_back, color: Color(0xFF35408B)), onPressed: () => Navigator.pop(context)),
       ),
@@ -180,7 +180,7 @@ class _SecurityPageState extends State<SecurityPage> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(title, style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5), letterSpacing: 1.5)),
+      child: Text(title, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5), letterSpacing: 1.5)),
     );
   }
 

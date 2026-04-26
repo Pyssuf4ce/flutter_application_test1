@@ -143,32 +143,63 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              Text("VAULT", style: GoogleFonts.manrope(fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: 6, color: const Color(0xFF4D58A5))),
+              Text("VAULT", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: 6, color: const Color(0xFF4D58A5))),
               const SizedBox(height: 48),
-              Text(
-                _isLoginMode ? "ยินดีต้อนรับ" : "สร้างบัญชีใหม่",
-                style: GoogleFonts.manrope(fontSize: 32, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D), height: 1.1),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(opacity: animation, child: SlideTransition(position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(animation), child: child));
+                },
+                child: Text(
+                  _isLoginMode ? "ยินดีต้อนรับ" : "สร้างบัญชีใหม่",
+                  key: ValueKey<bool>(_isLoginMode),
+                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 32, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D), height: 1.1),
+                ),
               ),
               const SizedBox(height: 12),
-              Text(
-                _isLoginMode 
-                    ? "กรุณาเข้าสู่ระบบเพื่อเข้าใช้งานคลังของคุณ"
-                    : "ลงทะเบียนเพื่อเริ่มต้นการซื้อขายใน VAULT",
-                style: const TextStyle(color: Color(0xFF586062), fontSize: 14),
-                textAlign: TextAlign.center,
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: Text(
+                  _isLoginMode 
+                      ? "กรุณาเข้าสู่ระบบเพื่อเข้าใช้งานคลังของคุณ"
+                      : "ลงทะเบียนเพื่อเริ่มต้นการซื้อขายใน VAULT",
+                  key: ValueKey<bool>(_isLoginMode),
+                  style: const TextStyle(color: Color(0xFF586062), fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: 40),
               
-              _buildInput("อีเมล", "example@mail.com", false, _emailController),
-              const SizedBox(height: 24),
-              _buildInput("รหัสผ่าน", "••••••••••••", true, _passwordController),
-              
-              if (!_isLoginMode) ...[
-                const SizedBox(height: 24),
-                _buildInput("ยืนยันรหัสผ่าน", "••••••••••••", true, _confirmPasswordController),
-                const SizedBox(height: 24),
-                _buildInput("เบอร์โทรศัพท์", "เช่น 0812345678", false, _phoneController, isNumber: true),
-              ],
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFF4D58A5).withValues(alpha: 0.06), blurRadius: 40, offset: const Offset(0, 20))
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildInputField("อีเมล", "example@mail.com", false, _emailController),
+                    const SizedBox(height: 20),
+                    _buildInputField("รหัสผ่าน", "••••••••••••", true, _passwordController),
+                    
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.fastOutSlowIn,
+                      child: _isLoginMode ? const SizedBox(width: double.infinity) : Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          _buildInputField("ยืนยันรหัสผ่าน", "••••••••••••", true, _confirmPasswordController),
+                          const SizedBox(height: 20),
+                          _buildInputField("เบอร์โทรศัพท์", "เช่น 0812345678", false, _phoneController, isNumber: true),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               const SizedBox(height: 32),
               
@@ -188,9 +219,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: _isLoading
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text(
-                          _isLoginMode ? "เข้าสู่ระบบ" : "สมัครสมาชิก",
-                          style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white),
+                      : AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: Text(
+                            _isLoginMode ? "เข้าสู่ระบบ" : "สมัครสมาชิก",
+                            key: ValueKey<bool>(_isLoginMode),
+                            style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white),
+                          ),
                         ),
                 ),
               ),
@@ -209,35 +244,27 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildInput(String label, String hint, bool isPassword, TextEditingController controller, {bool isNumber = false}) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withValues(alpha: 0.04), blurRadius: 40, offset: const Offset(0, 20))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label.toUpperCase(), style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF767682))),
-          const SizedBox(height: 12),
-          TextField(
-            controller: controller,
-            obscureText: isPassword,
-            keyboardType: isPassword ? TextInputType.text : (isNumber ? TextInputType.phone : TextInputType.emailAddress),
-            style: const TextStyle(fontWeight: FontWeight.bold),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: const Color(0xFF767682).withValues(alpha: 0.5), fontWeight: FontWeight.normal),
-              filled: true,
-              fillColor: const Color(0xFFE2E9EC),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
+  Widget _buildInputField(String label, String hint, bool isPassword, TextEditingController controller, {bool isNumber = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label.toUpperCase(), style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: const Color(0xFF767682))),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: isPassword,
+          keyboardType: isPassword ? TextInputType.text : (isNumber ? TextInputType.phone : TextInputType.emailAddress),
+          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600, color: const Color(0xFF191C1D)),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: const Color(0xFF767682).withValues(alpha: 0.5), fontWeight: FontWeight.normal),
+            filled: true,
+            fillColor: const Color(0xFFF5F7FA),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

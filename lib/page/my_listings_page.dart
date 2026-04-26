@@ -23,12 +23,12 @@ class _MyListingsPageState extends State<MyListingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text("ลบรายการนี้?", style: GoogleFonts.manrope(fontWeight: FontWeight.bold, color: Colors.red)),
-        content: Text("ยืนยันการลบสินค้า ข้อมูลจะหายไปทันทีและไม่สามารถกู้คืนได้นะ", style: GoogleFonts.manrope()),
+        title: Text("ลบรายการนี้?", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold, color: Colors.red)),
+        content: Text("ยืนยันการลบสินค้า ข้อมูลจะหายไปทันทีและไม่สามารถกู้คืนได้นะ", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), )),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false), 
-            child: Text("ยกเลิก", style: GoogleFonts.manrope(color: Colors.grey))
+            child: Text("ยกเลิก", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.grey))
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -36,7 +36,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
               backgroundColor: Colors.red, 
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
             ),
-            child: Text("ยืนยันการลบ", style: GoogleFonts.manrope(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text("ยืนยันการลบ", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -83,7 +83,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         ),
         title: Text(
           "MY LISTINGS",
-          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2, color: const Color(0xFF35408B)),
+          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2, color: const Color(0xFF35408B)),
         ),
         centerTitle: true,
       ),
@@ -105,7 +105,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                           children: [
                             Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.withValues(alpha: 0.5)),
                             const SizedBox(height: 16),
-                            Text("คุณยังไม่มีรายการสินค้าในขณะนี้", style: GoogleFonts.manrope(color: Colors.grey, fontSize: 16)),
+                            Text("คุณยังไม่มีรายการสินค้าในขณะนี้", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.grey, fontSize: 16)),
                           ],
                         ),
                       );
@@ -156,9 +156,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                   children: [
                                     Text(category.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
                                     const SizedBox(height: 4),
-                                    Text(title, style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text(title, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 16, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     const SizedBox(height: 4),
-                                    Text("${formatPrice(item.price)} THB", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5))),
+                                    Text("${formatPrice(item.price)} THB", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5))),
                                   ],
                                 ),
                               ),

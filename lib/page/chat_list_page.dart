@@ -149,7 +149,7 @@ class ChatListPageState extends State<ChatListPage> {
       centerTitle: true,
       title: Text(
         'INBOX',
-        style: GoogleFonts.manrope(
+        style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
           fontSize: 17,
           fontWeight: FontWeight.w800,
           letterSpacing: 2.5,
@@ -177,7 +177,7 @@ class ChatListPageState extends State<ChatListPage> {
             const Icon(Icons.wifi_off_rounded, size: 52, color: Colors.grey),
             const SizedBox(height: 12),
             Text('โหลดไม่สำเร็จ',
-                style: GoogleFonts.manrope(color: Colors.grey[600])),
+                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.grey[600])),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _fetchRooms(showLoading: true),
@@ -187,7 +187,7 @@ class ChatListPageState extends State<ChatListPage> {
                     borderRadius: BorderRadius.circular(12)),
               ),
               child: Text('ลองใหม่',
-                  style: GoogleFonts.manrope(color: Colors.white)),
+                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.white)),
             ),
           ],
         ),
@@ -203,14 +203,14 @@ class ChatListPageState extends State<ChatListPage> {
                 size: 72, color: Colors.grey.withValues(alpha: 0.25)),
             const SizedBox(height: 16),
             Text('ยังไม่มีการสนทนา',
-                style: GoogleFonts.manrope(
+                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.grey[400])),
             const SizedBox(height: 6),
             Text('เริ่มแชทจากหน้าสินค้าได้เลย',
                 style:
-                    GoogleFonts.manrope(fontSize: 13, color: Colors.grey[400])),
+                    GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, color: Colors.grey[400])),
           ],
         ),
       );
@@ -332,7 +332,7 @@ class _RoomTile extends StatelessWidget {
                 children: [
                   Text(
                     peer['name'] ?? 'VAULT User',
-                    style: GoogleFonts.manrope(
+                    style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
                       fontSize: 15,
                       fontWeight:
                           hasUnread ? FontWeight.w700 : FontWeight.w600,
@@ -344,7 +344,7 @@ class _RoomTile extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     lastMessage.isEmpty ? 'เริ่มการสนทนา' : lastMessage,
-                    style: GoogleFonts.manrope(
+                    style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
                       fontSize: 13,
                       color: hasUnread
                           ? const Color(0xFF35408B)
@@ -365,7 +365,7 @@ class _RoomTile extends StatelessWidget {
               children: [
                 Text(
                   time,
-                  style: GoogleFonts.manrope(
+                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
                     fontSize: 11,
                     color: hasUnread
                         ? const Color(0xFF35408B)
@@ -385,7 +385,7 @@ class _RoomTile extends StatelessWidget {
                     ),
                     child: Text(
                       unreadCount > 99 ? '99+' : '$unreadCount',
-                      style: GoogleFonts.manrope(
+                      style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
                           fontSize: 10,
                           color: Colors.white,
                           fontWeight: FontWeight.w700),

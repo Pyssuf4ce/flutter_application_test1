@@ -156,7 +156,7 @@ class _MainScreenState extends State<MainScreen> {
             const SizedBox(height: 2),
             Text(
               "SELL",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.inter(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: isSelected ? const Color(0xFF35408B) : Colors.grey[400], 

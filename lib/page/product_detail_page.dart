@@ -111,7 +111,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                     if (!isOwn) _circleBtn(Icons.favorite_border_rounded, () {
                       HapticFeedback.lightImpact();
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("เพิ่มในรายการโปรดแล้ว", style: GoogleFonts.manrope()),
+                        content: Text("เพิ่มในรายการโปรดแล้ว", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), )),
                         behavior: SnackBarBehavior.floating,
                         margin: const EdgeInsets.all(16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -179,7 +179,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                                         ),
                                         child: Text(
                                           '${_imgIdx + 1}/${imgs.length}',
-                                          style: GoogleFonts.manrope(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                     ),
@@ -249,7 +249,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                           ),
                           const SizedBox(height: 16),
                           // Title
-                          Text(title, style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800, color: _kDark, height: 1.25)),
+                          Text(title, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 22, fontWeight: FontWeight.w800, color: _kDark, height: 1.25)),
                           const SizedBox(height: 16),
                           // Price
                           Container(
@@ -258,7 +258,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                               gradient: const LinearGradient(colors: [_kAccent, Color(0xFF5B68C0)]),
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: Text("฿$price", style: GoogleFonts.manrope(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+                            child: Text("฿$price", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
                           ),
                         ],
                       ),
@@ -278,7 +278,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                           const SizedBox(height: 12),
                           const Divider(height: 1, color: Color(0xFFF1F3F4)),
                           const SizedBox(height: 12),
-                          Text(desc, style: GoogleFonts.manrope(fontSize: 14, color: Colors.grey[700], height: 1.7)),
+                          Text(desc, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, color: Colors.grey[700], height: 1.7)),
                         ],
                       ),
                     ),
@@ -350,7 +350,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
     return Row(children: [
       Icon(icon, size: 18, color: _kAccent),
       const SizedBox(width: 8),
-      Text(text, style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700, color: _kDark)),
+      Text(text, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 15, fontWeight: FontWeight.w700, color: _kDark)),
     ]);
   }
 
@@ -365,7 +365,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
             Container(width: 6, height: 6, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
             const SizedBox(width: 6),
           ],
-          Text(text, style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.w800, color: fg, letterSpacing: 0.5)),
+          Text(text, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 10, fontWeight: FontWeight.w800, color: fg, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -379,7 +379,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
           return Row(children: [
             const CircleAvatar(radius: 24, backgroundColor: Color(0xFFF5F7FA), child: Icon(Icons.person, color: Colors.grey)),
             const SizedBox(width: 12),
-            Expanded(child: Text('ไม่พบข้อมูลผู้ขาย', style: GoogleFonts.manrope(color: Colors.grey))),
+            Expanded(child: Text('ไม่พบข้อมูลผู้ขาย', style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.grey))),
           ]);
         }
         if (!snap.hasData) {
@@ -398,12 +398,12 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                 child: avatar.isEmpty ? const Icon(Icons.person, color: Colors.grey) : null),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name, style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 15, color: _kDark)),
+                Text(name, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w700, fontSize: 15, color: _kDark)),
                 const SizedBox(height: 2),
                 Row(children: [
                   const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF00C48C)),
                   const SizedBox(width: 4),
-                  Text("Verified Member", style: GoogleFonts.manrope(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w500)),
+                  Text("Verified Member", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w500)),
                 ]),
               ])),
               Container(
@@ -431,7 +431,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
               child: ElevatedButton.icon(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditItemPage(item: data))),
                 icon: const Icon(Icons.edit_rounded, size: 18),
-                label: Text("แก้ไขข้อมูลสินค้า", style: GoogleFonts.manrope(fontWeight: FontWeight.bold)),
+                label: Text("แก้ไขข้อมูลสินค้า", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(backgroundColor: _kAccentLight, foregroundColor: _kAccent, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               ),
             )
@@ -460,13 +460,13 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                     onPressed: () {
                       HapticFeedback.mediumImpact();
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("ฟีเจอร์นี้กำลังจะมาเร็วๆ นี้", style: GoogleFonts.manrope()),
+                        content: Text("ฟีเจอร์นี้กำลังจะมาเร็วๆ นี้", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), )),
                         behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ));
                     },
                     icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-                    label: Text("ซื้อเลย", style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w700)),
+                    label: Text("ซื้อเลย", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 16, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(backgroundColor: _kAccent, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                   ),
                 ),
@@ -514,7 +514,7 @@ class _ImageViewerPageState extends State<_ImageViewerPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
         leading: IconButton(icon: const Icon(Icons.close_rounded, color: Colors.white), onPressed: () => Navigator.pop(context)),
-        title: Text('${_page + 1} / ${widget.urls.length}', style: GoogleFonts.manrope(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+        title: Text('${_page + 1} / ${widget.urls.length}', style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
       body: PageView.builder(

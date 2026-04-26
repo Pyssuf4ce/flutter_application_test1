@@ -124,7 +124,7 @@ class PostItemPageState extends State<PostItemPage> {
   void _showSnackBar(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.manrope(fontWeight: FontWeight.w600)), 
+        content: Text(msg, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600)), 
         backgroundColor: color, 
         behavior: SnackBarBehavior.floating
       ),
@@ -146,11 +146,11 @@ class PostItemPageState extends State<PostItemPage> {
           context: context,
           builder: (ctx) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text('ทิ้งข้อมูลที่กรอกไว้?', style: GoogleFonts.manrope(fontWeight: FontWeight.bold)),
-            content: Text('ถ้าออกจากหน้านี้ ข้อมูลที่กรอกไว้จะหายไป', style: GoogleFonts.manrope(color: Colors.grey[600])),
+            title: Text('ทิ้งข้อมูลที่กรอกไว้?', style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold)),
+            content: Text('ถ้าออกจากหน้านี้ ข้อมูลที่กรอกไว้จะหายไป', style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.grey[600])),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('อยู่ต่อ', style: GoogleFonts.manrope(color: const Color(0xFF35408B)))),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('ทิ้ง', style: GoogleFonts.manrope(color: Colors.red))),
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('อยู่ต่อ', style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: const Color(0xFF35408B)))),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('ทิ้ง', style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.red))),
             ],
           ),
         );
@@ -163,7 +163,7 @@ class PostItemPageState extends State<PostItemPage> {
         elevation: 0,
         title: Text(
           "ลงขายสินค้า", 
-          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF191C1D))
+          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF191C1D))
         ),
         centerTitle: true,
       ),
@@ -176,11 +176,11 @@ class PostItemPageState extends State<PostItemPage> {
           children: [
             Text(
               "ปล่อยของ", 
-              style: GoogleFonts.manrope(fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D))
+              style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D))
             ),
             const SizedBox(height: 24),
             
-            Text("รูปภาพสินค้า", style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.bold)),
+            Text("รูปภาพสินค้า", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -241,7 +241,7 @@ class PostItemPageState extends State<PostItemPage> {
             _buildInputField("ราคา (บาท)", "ตั้งราคาที่คุณพอใจ", _priceController, const TextInputType.numberWithOptions(decimal: true), isPriceField: true),
             const SizedBox(height: 16),
             
-            Text("หมวดหมู่", style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.bold)),
+            Text("หมวดหมู่", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -254,7 +254,7 @@ class PostItemPageState extends State<PostItemPage> {
                   value: _selectedCategory,
                   isExpanded: true,
                   icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF767682)),
-                  style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: const Color(0xFF191C1D), fontSize: 15),
+                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600, color: const Color(0xFF191C1D), fontSize: 15),
                   items: _categories.map((String category) {
                     return DropdownMenuItem<String>(
                       value: category,
@@ -287,7 +287,7 @@ class PostItemPageState extends State<PostItemPage> {
                 ),
                 child: _isLoading 
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text("ลงขายเลย!", style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold)),
+                  : Text("ลงขายเลย!", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 24),
@@ -302,14 +302,14 @@ class PostItemPageState extends State<PostItemPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.manrope(fontSize: 13, fontWeight: FontWeight.bold)),
+        Text(label, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           keyboardType: type,
           maxLines: maxLines,
           inputFormatters: isPriceField ? [_PriceInputFormatter()] : null,
-          style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: const Color(0xFF191C1D), fontSize: 15),
+          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600, color: const Color(0xFF191C1D), fontSize: 15),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.normal),
@@ -318,7 +318,7 @@ class PostItemPageState extends State<PostItemPage> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             prefixText: isPriceField ? '฿ ' : null,
-            prefixStyle: GoogleFonts.manrope(fontWeight: FontWeight.bold, color: const Color(0xFF35408B), fontSize: 16),
+            prefixStyle: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold, color: const Color(0xFF35408B), fontSize: 16),
           ),
         ),
       ],

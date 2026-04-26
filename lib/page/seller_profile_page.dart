@@ -37,6 +37,11 @@ class SellerProfilePage extends StatelessWidget {
         title: Text(
           "Seller Profile",
           style: GoogleFonts.manrope(
+            textStyle: TextStyle(
+              fontFamilyFallback: [
+                GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai',
+              ],
+            ),
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF191C1D),
@@ -62,7 +67,15 @@ class SellerProfilePage extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     'ไม่สามารถโหลดข้อมูลได้',
-                    style: GoogleFonts.manrope(color: Colors.grey[600]),
+                    style: GoogleFonts.manrope(
+                      textStyle: TextStyle(
+                        fontFamilyFallback: [
+                          GoogleFonts.notoSansThai().fontFamily ??
+                              'Noto Sans Thai',
+                        ],
+                      ),
+                      color: Colors.grey[600],
+                    ),
                   ),
                 ],
               ),
@@ -101,6 +114,12 @@ class SellerProfilePage extends StatelessWidget {
                           Text(
                             username,
                             style: GoogleFonts.manrope(
+                              textStyle: TextStyle(
+                                fontFamilyFallback: [
+                                  GoogleFonts.notoSansThai().fontFamily ??
+                                      'Noto Sans Thai',
+                                ],
+                              ),
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
                             ),
@@ -146,6 +165,12 @@ class SellerProfilePage extends StatelessWidget {
                               Text(
                                 "Public Storefront View",
                                 style: GoogleFonts.manrope(
+                                  textStyle: TextStyle(
+                                    fontFamilyFallback: [
+                                      GoogleFonts.notoSansThai().fontFamily ??
+                                          'Noto Sans Thai',
+                                    ],
+                                  ),
                                   color: const Color(0xFF35408B),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
@@ -199,6 +224,12 @@ class SellerProfilePage extends StatelessWidget {
                         child: Text(
                           "Active Listings",
                           style: GoogleFonts.manrope(
+                            textStyle: TextStyle(
+                              fontFamilyFallback: [
+                                GoogleFonts.notoSansThai().fontFamily ??
+                                    'Noto Sans Thai',
+                              ],
+                            ),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -211,7 +242,9 @@ class SellerProfilePage extends StatelessWidget {
               ),
 
               StreamBuilder<List<Product>>(
-                stream: ProductService.instance.streamProductsBySeller(sellerId),
+                stream: ProductService.instance.streamProductsBySeller(
+                  sellerId,
+                ),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return const SliverToBoxAdapter(
@@ -265,10 +298,7 @@ class SellerProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSmallProductCard(
-    BuildContext context,
-    Product item,
-  ) {
+  Widget _buildSmallProductCard(BuildContext context, Product item) {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,

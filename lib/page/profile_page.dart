@@ -119,9 +119,9 @@ class ProfilePageState extends State<ProfilePage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text("VERIFIED MEMBER", style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFFD1DDFA), letterSpacing: 1.5)),
+                                    Text("VERIFIED MEMBER", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFFD1DDFA), letterSpacing: 1.5)),
                                     const SizedBox(height: 4),
-                                    Text(_username, style: GoogleFonts.manrope(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
+                                    Text(_username, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
                                   ],
                                 ),
                               ),
@@ -183,7 +183,7 @@ class ProfilePageState extends State<ProfilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("SHOPPING", style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF767682))),
+                          Text("SHOPPING", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF767682))),
                           const SizedBox(height: 16),
                         
                           _buildMenuTile(
@@ -200,7 +200,7 @@ class ProfilePageState extends State<ProfilePage> {
                           ),
                           
                           const SizedBox(height: 32),
-                          Text("ACCOUNT", style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF767682))),
+                          Text("ACCOUNT", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF767682))),
                           const SizedBox(height: 16),
                           _buildMenuTile(
                             icon: Icons.security_rounded,
@@ -220,7 +220,7 @@ class ProfilePageState extends State<ProfilePage> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               ),
                               icon: const Icon(Icons.logout, color: Color(0xFFba1a1a)),
-                              label: Text("LOG OUT", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFFba1a1a), letterSpacing: 1)),
+                              label: Text("LOG OUT", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFFba1a1a), letterSpacing: 1)),
                             ),
                           ),
                           const SizedBox(height: 100), 
@@ -242,7 +242,7 @@ class ProfilePageState extends State<ProfilePage> {
         children: [
           Icon(icon, color: const Color(0xFF4D58A5), size: 28),
           const SizedBox(height: 8),
-          Text(value, style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w900, color: const Color(0xFF191C1D))),
+          Text(value, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 20, fontWeight: FontWeight.w900, color: const Color(0xFF191C1D))),
           const SizedBox(height: 2),
           Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF767682), fontWeight: FontWeight.w600)),
         ],
@@ -276,7 +276,7 @@ class ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: GoogleFonts.manrope(fontWeight: FontWeight.bold, fontSize: 16, color: const Color(0xFF191C1D))),
+                    Text(title, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold, fontSize: 16, color: const Color(0xFF191C1D))),
                     const SizedBox(height: 4),
                     Text(subtitle, style: const TextStyle(color: Color(0xFF767682), fontSize: 12)),
                   ],

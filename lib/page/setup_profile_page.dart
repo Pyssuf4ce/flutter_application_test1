@@ -103,7 +103,7 @@ class _SetupProfilePageState extends State<SetupProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              Text("Complete Profile", style: GoogleFonts.manrope(fontSize: 32, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D))),
+              Text("Complete Profile", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 32, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D))),
               const SizedBox(height: 8),
               const Text("Add a photo and username to start selling.", style: TextStyle(color: Color(0xFF586062), fontSize: 14)),
               const SizedBox(height: 40),
@@ -126,20 +126,29 @@ class _SetupProfilePageState extends State<SetupProfilePage> {
               const SizedBox(height: 40),
 
               Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: const Color(0xFF4D58A5).withValues(alpha: 0.04), blurRadius: 40, offset: const Offset(0, 20))]),
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFF4D58A5).withValues(alpha: 0.06), blurRadius: 40, offset: const Offset(0, 20))
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("USERNAME", style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: const Color(0xFF767682))),
-                    const SizedBox(height: 12),
+                    Text("USERNAME", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: const Color(0xFF767682))),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: _usernameController,
+                      style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600, color: const Color(0xFF191C1D)),
                       decoration: InputDecoration(
                         hintText: "Enter your display name",
+                        hintStyle: TextStyle(color: const Color(0xFF767682).withValues(alpha: 0.5), fontWeight: FontWeight.normal),
                         filled: true,
-                        fillColor: const Color(0xFFE2E9EC),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        fillColor: const Color(0xFFF5F7FA),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       ),
                     ),
                   ],
@@ -155,7 +164,7 @@ class _SetupProfilePageState extends State<SetupProfilePage> {
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: const EdgeInsets.symmetric(vertical: 20), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
                   child: _isLoading 
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text("SAVE & CONTINUE", style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white)),
+                      : Text("SAVE & CONTINUE", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 20),

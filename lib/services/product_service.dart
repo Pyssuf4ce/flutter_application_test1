@@ -160,14 +160,17 @@ class ProductService {
       finalUrls.addAll(uploaded);
     }
 
-    await _db.from(_table).update({
-      'name': name,
-      'price': price,
-      'description': description,
-      'category': category,
-      'image_url': finalUrls.isNotEmpty ? finalUrls.first : '',
-      'image_urls': finalUrls,
-    }).eq('id', id);
+    await _db
+        .from(_table)
+        .update({
+          'name': name,
+          'price': price,
+          'description': description,
+          'category': category,
+          'image_url': finalUrls.isNotEmpty ? finalUrls.first : '',
+          'image_urls': finalUrls,
+        })
+        .eq('id', id);
   }
 
   /// เปลี่ยน status สินค้า (available / sold / hidden)
@@ -197,16 +200,20 @@ class ProductService {
     final tasks = <Future<String>>[];
 
     for (int i = 0; i < imageBytesList.length; i++) {
-      final ext = fileNames[i].contains('.') ? fileNames[i].split('.').last : 'jpg';
+      final ext = fileNames[i].contains('.')
+          ? fileNames[i].split('.').last
+          : 'jpg';
       final fileName = '${DateTime.now().millisecondsSinceEpoch}_$i.$ext';
       final path = '$userId/$fileName';
 
       tasks.add(() async {
-        await _db.storage.from(_bucket).uploadBinary(
-          path,
-          imageBytesList[i],
-          fileOptions: FileOptions(contentType: 'image/$ext'),
-        );
+        await _db.storage
+            .from(_bucket)
+            .uploadBinary(
+              path,
+              imageBytesList[i],
+              fileOptions: FileOptions(contentType: 'image/$ext'),
+            );
         return _db.storage.from(_bucket).getPublicUrl(path);
       }());
     }
