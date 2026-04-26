@@ -1,13 +1,13 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../core/constants.dart';
 import '../services/product_service.dart';
 
 class EditItemPage extends StatefulWidget {
-  final Map<String, dynamic> item; 
+  final Map<String, dynamic> item;
   const EditItemPage({super.key, required this.item});
 
   @override
@@ -18,23 +18,27 @@ class _EditItemPageState extends State<EditItemPage> {
   late TextEditingController _nameController;
   late TextEditingController _priceController;
   late TextEditingController _descController;
-  
+
   String _selectedCategory = kProductCategories.first;
   final List<String> _categories = kProductCategories;
 
-  List<String> _initialImages = []; 
-  List<String> _existingImages = []; 
-  final List<XFile> _newPickedFiles = []; 
-  final List<Uint8List> _newImagesBytes = []; 
-  bool _isLoading = false; 
+  List<String> _initialImages = [];
+  List<String> _existingImages = [];
+  final List<XFile> _newPickedFiles = [];
+  final List<Uint8List> _newImagesBytes = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.item['name']);
-    _priceController = TextEditingController(text: widget.item['price'].toString());
-    _descController = TextEditingController(text: widget.item['description'] ?? '');
-    
+    _priceController = TextEditingController(
+      text: widget.item['price'].toString(),
+    );
+    _descController = TextEditingController(
+      text: widget.item['description'] ?? '',
+    );
+
     if (_categories.contains(widget.item['category'])) {
       _selectedCategory = widget.item['category'];
     }
@@ -44,7 +48,7 @@ class _EditItemPageState extends State<EditItemPage> {
     } else if (widget.item['image_url'] != null) {
       _existingImages = [widget.item['image_url']];
     }
-    
+
     _initialImages = List<String>.from(_existingImages);
   }
 
@@ -59,7 +63,7 @@ class _EditItemPageState extends State<EditItemPage> {
   Future<void> _pickImages() async {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage(imageQuality: 70);
-    
+
     if (pickedFiles.isNotEmpty) {
       List<Uint8List> bytesList = [];
       for (var file in pickedFiles) {
@@ -78,14 +82,51 @@ class _EditItemPageState extends State<EditItemPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text("ลบรายการนี้?", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold, color: Colors.red)),
-        content: Text("ยืนยันการลบสินค้า ข้อมูลจะหายไปถาวรนะ", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), )),
+        title: Text(
+          "ลบรายการนี้?",
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontFamilyFallback: ['Noto Sans Thai'],
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        ),
+        content: Text(
+          "ยืนยันการลบสินค้า ข้อมูลจะหายไปถาวรนะ",
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontFamilyFallback: ['Noto Sans Thai'],
+          ),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("ยกเลิก", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.grey))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              "ยกเลิก",
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                color: Colors.grey,
+              ),
+            ),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: Text("ลบเลย", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.white, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              "ลบเลย",
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -103,9 +144,14 @@ class _EditItemPageState extends State<EditItemPage> {
         if (mounted) {
           HapticFeedback.heavyImpact();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ลบรายการเรียบร้อยแล้ว'), behavior: SnackBarBehavior.floating),
+            const SnackBar(
+              content: Text('ลบรายการเรียบร้อยแล้ว'),
+              behavior: SnackBarBehavior.floating,
+            ),
           );
-          Navigator.of(context)..pop()..pop();
+          Navigator.of(context)
+            ..pop()
+            ..pop();
         }
       } catch (e) {
         _showSnackBar('เกิดข้อผิดพลาด: ${e.toString()}', Colors.red);
@@ -123,14 +169,18 @@ class _EditItemPageState extends State<EditItemPage> {
     setState(() => _isLoading = true);
     try {
       // ลบรูปที่ถูกลบออกไปจาก Storage
-      final removed = _initialImages.where((u) => !_existingImages.contains(u)).toList();
-      if (removed.isNotEmpty) await ProductService.instance.deleteImageUrls(removed);
+      final removed = _initialImages
+          .where((u) => !_existingImages.contains(u))
+          .toList();
+      if (removed.isNotEmpty)
+        await ProductService.instance.deleteImageUrls(removed);
 
       // ✅ ใช้ ProductService อัปเดตสินค้า
       await ProductService.instance.updateProduct(
         id: widget.item['id'] as String,
         name: _nameController.text.trim(),
-        price: double.tryParse(_priceController.text.replaceAll(',', '')) ?? 0.0,
+        price:
+            double.tryParse(_priceController.text.replaceAll(',', '')) ?? 0.0,
         description: _descController.text.trim(),
         category: _selectedCategory,
         existingImageUrls: _existingImages,
@@ -151,7 +201,20 @@ class _EditItemPageState extends State<EditItemPage> {
   }
 
   void _showSnackBar(String msg, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600)), backgroundColor: color, behavior: SnackBarBehavior.floating));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          msg,
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontFamilyFallback: ['Noto Sans Thai'],
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -159,129 +222,359 @@ class _EditItemPageState extends State<EditItemPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white, elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.close, color: Color(0xFF191C1D)), onPressed: () => Navigator.pop(context)),
-        title: Text("แก้ไขข้อมูล", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF191C1D))),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Color(0xFF191C1D)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "แก้ไขข้อมูล",
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontFamilyFallback: ['Noto Sans Thai'],
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF191C1D),
+          ),
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("อัปเดตสินค้า", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D))),
-                const SizedBox(height: 24),
-                
-                Text("รูปภาพสินค้า", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: _pickImages,
-                        child: Container(
-                          width: 100, height: 100,
-                          decoration: BoxDecoration(color: const Color(0xFFF5F7FA), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E9EC), width: 2)),
-                          child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF35408B), size: 28), SizedBox(height: 4), Text("เพิ่มรูป", style: TextStyle(color: Color(0xFF767682), fontSize: 11, fontWeight: FontWeight.w600))]),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "อัปเดตสินค้า",
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF191C1D),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            Text(
+              "รูปภาพสินค้า",
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: _pickImages,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F7FA),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFFE2E9EC),
+                          width: 2,
                         ),
                       ),
-                      ..._existingImages.asMap().entries.map((entry) => _buildThumbnail(isNetwork: true, url: entry.value, onRemove: () => setState(() => _existingImages.removeAt(entry.key)))),
-                      ..._newImagesBytes.asMap().entries.map((entry) => _buildThumbnail(isNetwork: false, bytes: entry.value, onRemove: () => setState(() { _newPickedFiles.removeAt(entry.key); _newImagesBytes.removeAt(entry.key); }))),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                _buildInputField("ชื่อสินค้า", "ขายอะไรดีวันนี้?", _nameController, TextInputType.text),
-                const SizedBox(height: 16),
-                _buildInputField("ราคา (บาท)", "ตั้งราคาใหม่", _priceController, const TextInputType.numberWithOptions(decimal: true), isPriceField: true),
-                const SizedBox(height: 16),
-                
-                Text("หมวดหมู่", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(color: const Color(0xFFF5F7FA), borderRadius: BorderRadius.circular(16)),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedCategory, isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF767682)),
-                      style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600, color: const Color(0xFF191C1D), fontSize: 15),
-                      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), )))).toList(),
-                      onChanged: (val) => setState(() => _selectedCategory = val!),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            color: Color(0xFF35408B),
+                            size: 28,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "เพิ่มรูป",
+                            style: TextStyle(
+                              color: Color(0xFF767682),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-
-                _buildInputField("รายละเอียด", "อธิบายจุดเด่น...", _descController, TextInputType.multiline, maxLines: 3),
-                const SizedBox(height: 32),
-
-                SizedBox(
-                  width: double.infinity, height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _updateListing,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF35408B), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-                    child: _isLoading 
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text("บันทึกการเปลี่ยนแปลง", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity, height: 56,
-                  child: TextButton.icon(
-                    onPressed: _isLoading ? null : _deleteListing,
-                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                    label: Text("ลบรายการสินค้านี้", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                    style: TextButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.2))),
-                      backgroundColor: Colors.redAccent.withValues(alpha: 0.05),
+                  ..._existingImages.asMap().entries.map(
+                    (entry) => _buildThumbnail(
+                      isNetwork: true,
+                      url: entry.value,
+                      onRemove: () =>
+                          setState(() => _existingImages.removeAt(entry.key)),
                     ),
                   ),
-                ),
-                const SizedBox(height: 40),
-              ],
+                  ..._newImagesBytes.asMap().entries.map(
+                    (entry) => _buildThumbnail(
+                      isNetwork: false,
+                      bytes: entry.value,
+                      onRemove: () => setState(() {
+                        _newPickedFiles.removeAt(entry.key);
+                        _newImagesBytes.removeAt(entry.key);
+                      }),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(height: 24),
+
+            _buildInputField(
+              "ชื่อสินค้า",
+              "ขายอะไรดีวันนี้?",
+              _nameController,
+              TextInputType.text,
+            ),
+            const SizedBox(height: 16),
+            _buildInputField(
+              "ราคา (บาท)",
+              "ตั้งราคาใหม่",
+              _priceController,
+              const TextInputType.numberWithOptions(decimal: true),
+              isPriceField: true,
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              "หมวดหมู่",
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F7FA),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedCategory,
+                  isExpanded: true,
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Color(0xFF767682),
+                  ),
+                  style: TextStyle(
+                    fontFamily: 'Manrope',
+                    fontFamilyFallback: ['Noto Sans Thai'],
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF191C1D),
+                    fontSize: 15,
+                  ),
+                  items: _categories
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(
+                            c,
+                            style: TextStyle(
+                              fontFamily: 'Manrope',
+                              fontFamilyFallback: ['Noto Sans Thai'],
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) => setState(() => _selectedCategory = val!),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            _buildInputField(
+              "รายละเอียด",
+              "อธิบายจุดเด่น...",
+              _descController,
+              TextInputType.multiline,
+              maxLines: 3,
+            ),
+            const SizedBox(height: 32),
+
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _updateListing,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF35408B),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        "บันทึกการเปลี่ยนแปลง",
+                        style: TextStyle(
+                          fontFamily: 'Manrope',
+                          fontFamilyFallback: ['Noto Sans Thai'],
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: TextButton.icon(
+                onPressed: _isLoading ? null : _deleteListing,
+                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                label: Text(
+                  "ลบรายการสินค้านี้",
+                  style: TextStyle(
+                    fontFamily: 'Manrope',
+                    fontFamilyFallback: ['Noto Sans Thai'],
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: Colors.redAccent.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  backgroundColor: Colors.redAccent.withValues(alpha: 0.05),
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildThumbnail({required bool isNetwork, String? url, Uint8List? bytes, required VoidCallback onRemove}) {
+  Widget _buildThumbnail({
+    required bool isNetwork,
+    String? url,
+    Uint8List? bytes,
+    required VoidCallback onRemove,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(left: 12),
       child: Stack(
         children: [
-          ClipRRect(borderRadius: BorderRadius.circular(16), child: isNetwork ? Image.network(url!, width: 100, height: 100, fit: BoxFit.cover) : Image.memory(bytes!, width: 100, height: 100, fit: BoxFit.cover)),
-          Positioned(top: 4, right: 4, child: GestureDetector(onTap: onRemove, child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: isNetwork
+                ? Image.network(
+                    url!,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  )
+                : Image.memory(
+                    bytes!,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 14),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInputField(String label, String hint, TextEditingController controller, TextInputType type, {int maxLines = 1, bool isPriceField = false}) {
+  Widget _buildInputField(
+    String label,
+    String hint,
+    TextEditingController controller,
+    TextInputType type, {
+    int maxLines = 1,
+    bool isPriceField = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontFamilyFallback: ['Noto Sans Thai'],
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           keyboardType: type,
           maxLines: maxLines,
           inputFormatters: isPriceField ? [_PriceInputFormatter()] : null,
-          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600, color: const Color(0xFF191C1D), fontSize: 15),
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontFamilyFallback: ['Noto Sans Thai'],
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF191C1D),
+            fontSize: 15,
+          ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.normal),
+            hintStyle: TextStyle(
+              color: Colors.grey.shade400,
+              fontWeight: FontWeight.normal,
+            ),
             filled: true,
             fillColor: const Color(0xFFF5F7FA),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             prefixText: isPriceField ? '฿ ' : null,
-            prefixStyle: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold, color: const Color(0xFF35408B), fontSize: 16),
+            prefixStyle: TextStyle(
+              fontFamily: 'Manrope',
+              fontFamilyFallback: ['Noto Sans Thai'],
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF35408B),
+              fontSize: 16,
+            ),
           ),
         ),
       ],
@@ -292,7 +585,10 @@ class _EditItemPageState extends State<EditItemPage> {
 // ── Price input formatter: ใส่ comma ขณะพิมพ์ ──
 class _PriceInputFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final digits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
     if (digits.isEmpty) return const TextEditingValue();
 

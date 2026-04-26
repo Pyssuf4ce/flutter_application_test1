@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// // import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -80,7 +80,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text("Change $title", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold)),
+        title: Text("Change $title", style: const TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.text,
@@ -132,7 +132,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text("EDIT PROFILE", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 16)),
+        title: const Text("EDIT PROFILE", style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 16)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.white,
@@ -183,7 +183,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(title, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 11, fontWeight: FontWeight.w800, color: const Color(0xFF4D58A5), letterSpacing: 1.5)),
+      child: Text(title, style: const TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4D58A5), letterSpacing: 1.5)),
     );
   }
 

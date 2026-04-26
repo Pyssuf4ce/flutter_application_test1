@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+// // import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/message_model.dart';
@@ -436,7 +436,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13)),
+        content: Text(
+          msg,
+          style: const TextStyle(
+            fontFamily: 'Manrope',
+            fontFamilyFallback: ['Noto Sans Thai'],
+            fontSize: 13,
+          ),
+        ),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -499,19 +506,23 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             children: [
               Text(
                 _peer.name,
-                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                style: const TextStyle(
+                  fontFamily: 'Manrope',
+                  fontFamilyFallback: ['Noto Sans Thai'],
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF191C1D),
+                  color: Color(0xFF191C1D),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 'VAULT',
-                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                style: const TextStyle(
+                  fontFamily: 'Manrope',
+                  fontFamilyFallback: ['Noto Sans Thai'],
                   fontSize: 11,
-                  color: Colors.grey[500],
+                  color: Colors.grey,
                 ),
               ),
             ],
@@ -538,7 +549,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             Text(
               'โหลดไม่สำเร็จ กรุณาลองใหม่',
               textAlign: TextAlign.center,
-              style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.grey[600]),
+              style: const TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                color: Colors.grey,
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -557,7 +572,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ),
               child: Text(
                 'ลองใหม่',
-                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.white),
+                style: const TextStyle(
+                  fontFamily: 'Manrope',
+                  fontFamilyFallback: ['Noto Sans Thai'],
+                  color: Colors.white,
+                ),
               ),
             ),
           ],
@@ -593,9 +612,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             child: Center(
               child: Text(
                 '— เริ่มต้นการสนทนา —',
-                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                style: const TextStyle(
+                  fontFamily: 'Manrope',
+                  fontFamilyFallback: ['Noto Sans Thai'],
                   fontSize: 11,
-                  color: Colors.grey[400],
+                  color: Colors.grey,
                 ),
               ),
             ),
@@ -686,19 +707,23 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               children: [
                 Text(
                   'สนใจสินค้า',
-                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                  style: const TextStyle(
+                    fontFamily: 'Manrope',
+                    fontFamilyFallback: ['Noto Sans Thai'],
                     fontSize: 10,
-                    color: Colors.grey[500],
+                    color: Colors.grey,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   p['name'] ?? 'สินค้า',
-                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                  style: const TextStyle(
+                    fontFamily: 'Manrope',
+                    fontFamilyFallback: ['Noto Sans Thai'],
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF191C1D),
+                    color: Color(0xFF191C1D),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -738,7 +763,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 borderRadius: BorderRadius.circular(24),
                 child: TextField(
                   controller: _textCtrl,
-                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 15, height: 1.4),
+                  autofocus: true,
+                  style: const TextStyle(
+                    fontFamily: 'Manrope',
+                    fontFamilyFallback: ['Noto Sans Thai'],
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
                   maxLines: 5,
                   minLines: 1,
                   keyboardType: TextInputType.multiline,
@@ -753,8 +784,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   ),
                   decoration: InputDecoration(
                     hintText: 'พิมพ์ข้อความ...',
-                    hintStyle: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
-                      color: Colors.grey[400],
+                    hintStyle: const TextStyle(
+                      fontFamily: 'Manrope',
+                      fontFamilyFallback: ['Noto Sans Thai'],
+                      color: Colors.grey,
                       fontSize: 15,
                     ),
                     filled: true,
@@ -854,7 +887,9 @@ class _DateDivider extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               label,
-              style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
                 fontSize: 11,
                 color: Colors.grey[400],
                 fontWeight: FontWeight.w600,
@@ -923,11 +958,20 @@ class _Bubble extends StatelessWidget {
                     Clipboard.setData(ClipboardData(text: text));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('คัดลอกข้อความแล้ว', style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13)),
+                        content: Text(
+                          'คัดลอกข้อความแล้ว',
+                          style: TextStyle(
+                            fontFamily: 'Manrope',
+                            fontFamilyFallback: ['Noto Sans Thai'],
+                            fontSize: 13,
+                          ),
+                        ),
                         behavior: SnackBarBehavior.floating,
                         duration: const Duration(seconds: 2),
                         margin: const EdgeInsets.all(16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     );
                   },
@@ -956,7 +1000,9 @@ class _Bubble extends StatelessWidget {
                     ),
                     child: Text(
                       text,
-                      style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                      style: TextStyle(
+                        fontFamily: 'Manrope',
+                        fontFamilyFallback: ['Noto Sans Thai'],
                         fontSize: 15,
                         height: 1.4,
                         color: isMe ? Colors.white : const Color(0xFF191C1D),
@@ -981,7 +1027,9 @@ class _Bubble extends StatelessWidget {
                             children: [
                               Text(
                                 time,
-                                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                                style: TextStyle(
+                                  fontFamily: 'Manrope',
+                                  fontFamilyFallback: ['Noto Sans Thai'],
                                   fontSize: 10,
                                   color: Colors.grey[400],
                                 ),

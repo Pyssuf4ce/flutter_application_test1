@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants.dart';
 import '../models/product_model.dart';
@@ -36,12 +36,7 @@ class SellerProfilePage extends StatelessWidget {
         ),
         title: Text(
           "Seller Profile",
-          style: GoogleFonts.manrope(
-            textStyle: TextStyle(
-              fontFamilyFallback: [
-                GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai',
-              ],
-            ),
+          style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], 
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF191C1D),
@@ -67,13 +62,7 @@ class SellerProfilePage extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     'ไม่สามารถโหลดข้อมูลได้',
-                    style: GoogleFonts.manrope(
-                      textStyle: TextStyle(
-                        fontFamilyFallback: [
-                          GoogleFonts.notoSansThai().fontFamily ??
-                              'Noto Sans Thai',
-                        ],
-                      ),
+                    style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], 
                       color: Colors.grey[600],
                     ),
                   ),
@@ -113,13 +102,7 @@ class SellerProfilePage extends StatelessWidget {
                         children: [
                           Text(
                             username,
-                            style: GoogleFonts.manrope(
-                              textStyle: TextStyle(
-                                fontFamilyFallback: [
-                                  GoogleFonts.notoSansThai().fontFamily ??
-                                      'Noto Sans Thai',
-                                ],
-                              ),
+                            style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], 
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
                             ),
@@ -164,13 +147,7 @@ class SellerProfilePage extends StatelessWidget {
                               const SizedBox(width: 8),
                               Text(
                                 "Public Storefront View",
-                                style: GoogleFonts.manrope(
-                                  textStyle: TextStyle(
-                                    fontFamilyFallback: [
-                                      GoogleFonts.notoSansThai().fontFamily ??
-                                          'Noto Sans Thai',
-                                    ],
-                                  ),
+                                style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], 
                                   color: const Color(0xFF35408B),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
@@ -223,13 +200,7 @@ class SellerProfilePage extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           "Active Listings",
-                          style: GoogleFonts.manrope(
-                            textStyle: TextStyle(
-                              fontFamilyFallback: [
-                                GoogleFonts.notoSansThai().fontFamily ??
-                                    'Noto Sans Thai',
-                              ],
-                            ),
+                          style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], 
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),

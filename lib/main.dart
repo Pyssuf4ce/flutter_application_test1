@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:google_fonts/google_fonts.dart';
+// // import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,12 +32,7 @@ Future<void> main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZ3dlcWlxaHljbm9icHBtYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MDI5NDQsImV4cCI6MjA5MTI3ODk0NH0.qGeIgwL7JV8qraE2LCsw46zZnIK7G6x99FNVZABg1Es',
   );
 
-  // 6. 🔤 Preload ฟอนต์ไทยและ Manrope
-  GoogleFonts.prompt().fontFamily;
-  GoogleFonts.notoSansThai().fontFamily;
-  GoogleFonts.manrope().fontFamily;
-
-  await GoogleFonts.pendingFonts();
+  // 6. 🔤 Local Fonts are handled by pubspec.yaml and ThemeData
 
   runApp(const VaultApp());
 }
@@ -68,10 +63,10 @@ class VaultApp extends StatelessWidget {
           primary: const Color(0xFF4D58A5),
           surface: const Color(0xFFF8F9FA),
         ),
-        // ✅ ใช้ Google Fonts
-        fontFamily: GoogleFonts.prompt().fontFamily,
-        fontFamilyFallback: [
-          GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai',
+        // ✅ ใช้ Local Fonts
+        fontFamily: 'Prompt',
+        fontFamilyFallback: const [
+          'Noto Sans Thai',
           'sans-serif',
         ],
       ),

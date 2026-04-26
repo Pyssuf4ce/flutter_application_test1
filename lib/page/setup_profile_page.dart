@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// // import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main_screen.dart';
@@ -103,7 +103,7 @@ class _SetupProfilePageState extends State<SetupProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              Text("Complete Profile", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 32, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D))),
+              Text("Complete Profile", style: const TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF191C1D))),
               const SizedBox(height: 8),
               const Text("Add a photo and username to start selling.", style: TextStyle(color: Color(0xFF586062), fontSize: 14)),
               const SizedBox(height: 40),
@@ -137,11 +137,12 @@ class _SetupProfilePageState extends State<SetupProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("USERNAME", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: const Color(0xFF767682))),
+                    Text("USERNAME", style: const TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Color(0xFF767682))),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _usernameController,
-                      style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600, color: const Color(0xFF191C1D)),
+                      autofocus: true,
+                      style: const TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontWeight: FontWeight.w600, color: Color(0xFF191C1D)),
                       decoration: InputDecoration(
                         hintText: "Enter your display name",
                         hintStyle: TextStyle(color: const Color(0xFF767682).withValues(alpha: 0.5), fontWeight: FontWeight.normal),
@@ -164,7 +165,7 @@ class _SetupProfilePageState extends State<SetupProfilePage> {
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: const EdgeInsets.symmetric(vertical: 20), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
                   child: _isLoading 
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text("SAVE & CONTINUE", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white)),
+                      : const Text("SAVE & CONTINUE", style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 20),

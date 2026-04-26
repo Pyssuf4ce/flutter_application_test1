@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main_screen.dart';
 import 'setup_profile_page.dart';
@@ -143,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              Text("VAULT", style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: 6, color: const Color(0xFF4D58A5))),
+              Text("VAULT", style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: 6, color: const Color(0xFF4D58A5))),
               const SizedBox(height: 48),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
@@ -153,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: Text(
                   _isLoginMode ? "ยินดีต้อนรับ" : "สร้างบัญชีใหม่",
                   key: ValueKey<bool>(_isLoginMode),
-                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 32, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D), height: 1.1),
+                  style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 32, fontWeight: FontWeight.w800, color: const Color(0xFF191C1D), height: 1.1),
                 ),
               ),
               const SizedBox(height: 12),
@@ -224,7 +224,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: Text(
                             _isLoginMode ? "เข้าสู่ระบบ" : "สมัครสมาชิก",
                             key: ValueKey<bool>(_isLoginMode),
-                            style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white),
+                            style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white),
                           ),
                         ),
                 ),
@@ -248,13 +248,14 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: const Color(0xFF767682))),
+        Text(label.toUpperCase(), style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: const Color(0xFF767682))),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           obscureText: isPassword,
+          autofocus: label == "อีเมล", // บังคับเปิดแป้นพิมพ์ที่ช่องอีเมล
           keyboardType: isPassword ? TextInputType.text : (isNumber ? TextInputType.phone : TextInputType.emailAddress),
-          style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontWeight: FontWeight.w600, color: const Color(0xFF191C1D)),
+          style: const TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontWeight: FontWeight.w600, color: Color(0xFF191C1D)),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: const Color(0xFF767682).withValues(alpha: 0.5), fontWeight: FontWeight.normal),

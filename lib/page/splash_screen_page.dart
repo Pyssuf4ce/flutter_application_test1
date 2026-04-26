@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 
@@ -166,14 +166,11 @@ class _SplashScreenPageState extends State<SplashScreenPage>
                       // ชื่อแบรนด์พร้อมฟอนต์ที่สวยงาม
                       Text(
                         'VAULT',
-                        style: GoogleFonts.manrope(
+                        style: const TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], 
                           fontSize: 42,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 12,
-                          color: const Color(0xFF35408B),
-                          textStyle: const TextStyle(
-                            fontFamilyFallback: ['Noto Sans Thai', 'sans-serif'],
-                          ),
+                          color: Color(0xFF35408B),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -181,7 +178,7 @@ class _SplashScreenPageState extends State<SplashScreenPage>
                       // สโลแกนหรือคำอธิบาย
                       Text(
                         'MARKETPLACE',
-                        style: GoogleFonts.manrope(
+                        style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], 
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 6,

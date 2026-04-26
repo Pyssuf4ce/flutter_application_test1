@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'chat_room_page.dart';
 import 'chat_events.dart'; // EventBus แทน globalRefresh
@@ -52,7 +52,11 @@ class ChatListPageState extends State<ChatListPage> {
 
   // ─── data ─────────────────────────────────────────────────────────────────
   Future<void> _fetchRooms({bool showLoading = false}) async {
-    if (showLoading && mounted) setState(() { _isLoading = true; _hasError = false; });
+    if (showLoading && mounted)
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
 
     try {
       final data = await _supabase
@@ -69,7 +73,11 @@ class ChatListPageState extends State<ChatListPage> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() { _isLoading = false; _hasError = showLoading; });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+          _hasError = showLoading;
+        });
     }
   }
 
@@ -94,32 +102,35 @@ class ChatListPageState extends State<ChatListPage> {
   // ─── public API (MainScreen เรียกผ่าน GlobalKey) ─────────────────────────
   void scrollToTopAndRefresh() {
     if (_scrollCtrl.hasClients) {
-      _scrollCtrl.animateTo(0,
-          duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      _scrollCtrl.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
     _fetchRooms(showLoading: true);
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
   String _formatTime(String? raw) {
-  if (raw == null) return '';
-  final dt = DateTime.parse(raw).toLocal();
-  final now = DateTime.now();
-  final diff = now.difference(dt);
+    if (raw == null) return '';
+    final dt = DateTime.parse(raw).toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(dt);
 
-  if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
-    // วันนี้ → แสดงเวลา
-    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  } else if (diff.inDays == 1) {
-    return 'เมื่อวาน';
-  } else if (diff.inDays < 7) {
-    // แทน DateFormat('E', 'th') ด้วย map ตรงๆ ไม่ต้องพึ่ง locale
-    const days = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
-    return days[dt.weekday - 1];
-  } else {
-    return '${dt.day}/${dt.month}/${dt.year % 100}';
+    if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+      // วันนี้ → แสดงเวลา
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } else if (diff.inDays == 1) {
+      return 'เมื่อวาน';
+    } else if (diff.inDays < 7) {
+      // แทน DateFormat('E', 'th') ด้วย map ตรงๆ ไม่ต้องพึ่ง locale
+      const days = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
+      return days[dt.weekday - 1];
+    } else {
+      return '${dt.day}/${dt.month}/${dt.year % 100}';
+    }
   }
-}
 
   Map<String, String?> _peerOf(Map<String, dynamic> room) {
     final isBuyer = room['buyer_id'] == _myUserId;
@@ -149,7 +160,9 @@ class ChatListPageState extends State<ChatListPage> {
       centerTitle: true,
       title: Text(
         'INBOX',
-        style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+        style: TextStyle(
+          fontFamily: 'Manrope',
+          fontFamilyFallback: ['Noto Sans Thai'],
           fontSize: 17,
           fontWeight: FontWeight.w800,
           letterSpacing: 2.5,
@@ -158,9 +171,15 @@ class ChatListPageState extends State<ChatListPage> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.edit_square, size: 22, color: Color(0xFF35408B)),
+          icon: const Icon(
+            Icons.edit_square,
+            size: 22,
+            color: Color(0xFF35408B),
+          ),
           tooltip: 'แชทใหม่',
-          onPressed: () {/* TODO: new chat flow */},
+          onPressed: () {
+            /* TODO: new chat flow */
+          },
         ),
       ],
     );
@@ -176,18 +195,31 @@ class ChatListPageState extends State<ChatListPage> {
           children: [
             const Icon(Icons.wifi_off_rounded, size: 52, color: Colors.grey),
             const SizedBox(height: 12),
-            Text('โหลดไม่สำเร็จ',
-                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.grey[600])),
+            Text(
+              'โหลดไม่สำเร็จ',
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                color: Colors.grey[600],
+              ),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _fetchRooms(showLoading: true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF35408B),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: Text('ลองใหม่',
-                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), color: Colors.white)),
+              child: Text(
+                'ลองใหม่',
+                style: TextStyle(
+                  fontFamily: 'Manrope',
+                  fontFamilyFallback: ['Noto Sans Thai'],
+                  color: Colors.white,
+                ),
+              ),
             ),
           ],
         ),
@@ -199,18 +231,32 @@ class ChatListPageState extends State<ChatListPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.chat_bubble_outline_rounded,
-                size: 72, color: Colors.grey.withValues(alpha: 0.25)),
+            Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 72,
+              color: Colors.grey.withValues(alpha: 0.25),
+            ),
             const SizedBox(height: 16),
-            Text('ยังไม่มีการสนทนา',
-                style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[400])),
+            Text(
+              'ยังไม่มีการสนทนา',
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[400],
+              ),
+            ),
             const SizedBox(height: 6),
-            Text('เริ่มแชทจากหน้าสินค้าได้เลย',
-                style:
-                    GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), fontSize: 13, color: Colors.grey[400])),
+            Text(
+              'เริ่มแชทจากหน้าสินค้าได้เลย',
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Noto Sans Thai'],
+                fontSize: 13,
+                color: Colors.grey[400],
+              ),
+            ),
           ],
         ),
       );
@@ -291,7 +337,8 @@ class _RoomTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: const BoxDecoration(
           border: Border(
-              bottom: BorderSide(color: Color(0xFFF1F3F4), width: 0.8)),
+            bottom: BorderSide(color: Color(0xFFF1F3F4), width: 0.8),
+          ),
         ),
         child: Row(
           children: [
@@ -305,8 +352,11 @@ class _RoomTile extends StatelessWidget {
                       ? NetworkImage(peer['avatar']!)
                       : null,
                   child: (peer['avatar']?.isEmpty ?? true)
-                      ? Icon(Icons.person_rounded,
-                          color: Colors.grey[500], size: 26)
+                      ? Icon(
+                          Icons.person_rounded,
+                          color: Colors.grey[500],
+                          size: 26,
+                        )
                       : null,
                 ),
                 if (hasUnread)
@@ -332,10 +382,11 @@ class _RoomTile extends StatelessWidget {
                 children: [
                   Text(
                     peer['name'] ?? 'VAULT User',
-                    style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      fontFamilyFallback: ['Noto Sans Thai'],
                       fontSize: 15,
-                      fontWeight:
-                          hasUnread ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
                       color: const Color(0xFF191C1D),
                     ),
                     maxLines: 1,
@@ -344,13 +395,16 @@ class _RoomTile extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     lastMessage.isEmpty ? 'เริ่มการสนทนา' : lastMessage,
-                    style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      fontFamilyFallback: ['Noto Sans Thai'],
                       fontSize: 13,
                       color: hasUnread
                           ? const Color(0xFF35408B)
                           : Colors.grey[500],
-                      fontWeight:
-                          hasUnread ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: hasUnread
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -365,30 +419,36 @@ class _RoomTile extends StatelessWidget {
               children: [
                 Text(
                   time,
-                  style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
+                  style: TextStyle(
+                    fontFamily: 'Manrope',
+                    fontFamilyFallback: ['Noto Sans Thai'],
                     fontSize: 11,
                     color: hasUnread
                         ? const Color(0xFF35408B)
                         : Colors.grey[400],
-                    fontWeight:
-                        hasUnread ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
                 if (hasUnread) ...[
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF35408B),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       unreadCount > 99 ? '99+' : '$unreadCount',
-                      style: GoogleFonts.manrope(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
-                          fontSize: 10,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontFamily: 'Manrope',
+                        fontFamilyFallback: ['Noto Sans Thai'],
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -420,10 +480,13 @@ class _SkeletonTileState extends State<_SkeletonTile>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1200))
-      ..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.4, end: 0.9).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(
+      begin: 0.4,
+      end: 0.9,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -441,12 +504,16 @@ class _SkeletonTileState extends State<_SkeletonTile>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: const BoxDecoration(
-              border: Border(
-                  bottom: BorderSide(color: Color(0xFFF1F3F4), width: 0.8))),
+            border: Border(
+              bottom: BorderSide(color: Color(0xFFF1F3F4), width: 0.8),
+            ),
+          ),
           child: Row(
             children: [
               const CircleAvatar(
-                  radius: 26, backgroundColor: Color(0xFFE8EAED)),
+                radius: 26,
+                backgroundColor: Color(0xFFE8EAED),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -468,11 +535,11 @@ class _SkeletonTileState extends State<_SkeletonTile>
   }
 
   Widget _bar(double w, double h) => Container(
-        width: w,
-        height: h,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8EAED),
-          borderRadius: BorderRadius.circular(6),
-        ),
-      );
+    width: w,
+    height: h,
+    decoration: BoxDecoration(
+      color: const Color(0xFFE8EAED),
+      borderRadius: BorderRadius.circular(6),
+    ),
+  );
 }

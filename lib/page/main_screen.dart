@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 
 // Import หน้าต่างๆ
 import 'discover_page.dart';
@@ -156,8 +156,7 @@ class _MainScreenState extends State<MainScreen> {
             const SizedBox(height: 2),
             Text(
               "SELL",
-              style: GoogleFonts.inter(textStyle: TextStyle(fontFamilyFallback: [GoogleFonts.notoSansThai().fontFamily ?? 'Noto Sans Thai']), 
-                fontSize: 10,
+              style: TextStyle(fontFamily: 'Manrope', fontFamilyFallback: ['Noto Sans Thai'], fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: isSelected ? const Color(0xFF35408B) : Colors.grey[400], 
                 letterSpacing: 0.5,
