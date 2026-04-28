@@ -541,6 +541,7 @@ class _EditItemPageState extends State<EditItemPage> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
+          autofocus: label == 'ชื่อสินค้า',
           keyboardType: type,
           maxLines: maxLines,
           inputFormatters: isPriceField ? [_PriceInputFormatter()] : null,

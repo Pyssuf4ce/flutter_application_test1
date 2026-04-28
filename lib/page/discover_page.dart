@@ -109,6 +109,7 @@ class DiscoverPageState extends State<DiscoverPage> {
                   child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocus,
+                    autofocus: true,
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search, color: Color(0xFF767682)),
