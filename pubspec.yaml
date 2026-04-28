@@ -17,6 +17,8 @@ dependencies:
   intl: ^0.20.2
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  path_provider: ^2.1.5
+  flutter_native_splash: ^2.4.7
 
 dev_dependencies:
   flutter_test:
@@ -25,16 +27,33 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   hive_generator: ^2.0.1
   build_runner: ^2.4.9
+ 
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/app_icon_v.png"
-  min_sdk_android: 21
+  # ✅ รูปเก่าเอาไว้เป็น fallback สำหรับ Android รุ่นเก่าและ iOS
+  image_path: "assets/images/vault_app_icon_1024.png"
+  # ✅ เปิดใช้งาน Adaptive Icon สำหรับ Android รุ่นใหม่
+  adaptive_icon_background: "#35408B" # ใช้สีน้ำเงินเข้มเป็นพื้นหลังเต็มๆ
+  adaptive_icon_foreground: "assets/images/vault_foreground.png" # ใช้รูปโลโก้ขาวโปร่งใส
 
+flutter_native_splash:
+  # สีพื้นหลังของ Native Splash (ใช้สีน้ำเงินเข้มให้กลืนกับรูปไอคอน)
+  color: "#35408B" 
+  # เอารูปไอคอนมึงมาโชว์ตรงกลางตอนโหลด
+  image: "assets/images/vault_app_icon_1024.png"
+  
+  # สำหรับ Android 12 ขึ้นไป (ระบบมันบังคับดีไซน์ใหม่ ต้องใส่แยกไว้)
+  android_12:
+    color: "#35408B"
+    image: "assets/images/vault_app_icon_1024.png"
+    
 flutter:
   uses-material-design: true
 
+  assets:
+    - assets/images/
   fonts:
     - family: Manrope
       fonts:

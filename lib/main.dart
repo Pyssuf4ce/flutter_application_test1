@@ -65,10 +65,7 @@ class VaultApp extends StatelessWidget {
         ),
         // ✅ ใช้ Local Fonts
         fontFamily: 'Prompt',
-        fontFamilyFallback: const [
-          'Noto Sans Thai',
-          'sans-serif',
-        ],
+        fontFamilyFallback: const ['Noto Sans Thai', 'sans-serif'],
       ),
 
       // 💡 ตั้งหน้าแรกให้เป็น SplashScreen
